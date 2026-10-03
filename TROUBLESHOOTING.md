@@ -1,57 +1,43 @@
 # Troubleshooting
 
-## EliteC Python imports fail
-Run compiler tools inside the repository layout. Chapters 10–12 intentionally import earlier educational stages by repository-relative paths.
+## Chapter 15 simulator differs from real kernel behavior
+Expected. Chapter 15 projects model algorithms in user-space so they can be tested deterministically. They do not claim to implement privileged context switching, TSS, CR3 changes or real filesystem drivers.
 
-## EliteC source error prints traceback
-That is an internal bug. Normal syntax/type failures should be converted to `CompileError` diagnostics without Python traceback.
+## vm-cow-sim reports missing page
+The simulator only translates pages explicitly mapped with `map_zero`. Check page alignment and virtual page number.
 
-## EliteC generated program returns a large value but shell shows another status
-Unix process exit status is limited. Use small status-based tests or add an output/reference-interpreter path for larger values.
+## Challenge-suite build fails on `-no-pie`
+Course targets Fedora/Linux x86-64 GCC/Clang. Confirm compiler driver supports the Linux option and that you are not using a non-Linux target.
 
-## Chapter 14 kernel does not link
-Confirm x86-64 GNU `ld`, freestanding flags, `-fno-pie`, `-mno-red-zone` and that no libc/runtime symbol leaked into objects.
+## `strip` not found
+`strip` comes from GNU binutils, installed as a required course package.
 
-## Multiboot2 header not found
-Run:
+## binary-report fails on a random third-party file
+The tool is intended for authorized/course ELF binaries. Confirm the target is an ELF file and that `file/readelf/nm/strings` are installed.
 
-```bash
-python3 14-my-os/tests/check_multiboot.py 14-my-os/build/kernel.elf
-readelf -SW 14-my-os/build/kernel.elf
-```
+## cfg-extract misses an indirect branch
+Expected. It is a small text parser over objdump output, not a full recursive-descent disassembler. Indirect jump/call resolution is intentionally an advanced challenge.
 
-The header must remain aligned and within the first 32 KiB of the file.
+## PIE address in GDB differs from objdump
+Runtime PIE has a load base. Use `info proc mappings` and image-relative offsets rather than comparing absolute addresses directly.
 
-## Kernel builds but ISO target says grub2-mkrescue missing
-Fedora boot-image tools are optional because normal chapter verification does not require a VM. Install the optional GRUB/xorriso packages through the repo installer or DNF.
+## Parser lab rejects oversized packet
+That is the fixed behavior. The default build checks both destination capacity and available input bytes.
 
-## grub2-mkrescue fails while creating ISO
-Check `xorriso` and GRUB PC modules. Do not modify your machine's installed bootloader configuration; the course only builds an ISO in the project directory.
+## sanitizer-demo exits non-zero
+Expected. `make sanitizer-demo` intentionally builds the compile-time injected defect and expects ASan/UBSan to terminate/report it. It is a local course demonstration only.
 
-## QEMU command missing
-Install the Fedora x86 system-emulator package. `make qemu-test` deliberately refuses to proceed when required tools are absent.
+## ASan is unavailable
+GCC/Clang Fedora packages normally provide sanitizer runtimes. Base `make test` does not require running the buggy sanitizer demo; `make sanitize` does require sanitizer support.
 
-## QEMU shows no serial output
-Check in this order:
-1. Multiboot header validator
-2. ELF entry and linker VMAs
-3. boot assembly/page tables
-4. long-mode transition
-5. serial initialization
+## Fuzzing finds no crash
+A clean deterministic smoke run is not proof of security. Increase corpus quality/coverage tooling in authorized local work, then keep discovered cases as regression tests.
 
-Use `objdump -d` before changing multiple subsystems at once.
-
-## Kernel hangs after enabling interrupts
-Inspect IDT gates, PIC mapping/masks, IRQ EOI and ISR stack behavior. Default exception handler intentionally halts instead of returning from unknown exception frames.
-
-## Keyboard supports only some keys
-Expected. Chapter 14 implements a small PS/2 set-1 subset with no Shift/Ctrl/extended-key state machine.
-
-## PMM reports zero frames
-Inspect Multiboot memory map and reservation boundary. Early PMM only selects usable memory below 4 GiB because boot page tables identity-map that range.
+## Security report severity feels uncertain
+Do not infer severity from bug class alone. State reachability, attacker control, privileges and demonstrated impact, and mark uncertainty explicitly.
 
 ## gcc / clang / gdb / binutils missing
-Run `./scripts/install-fedora-tools.sh` and `./scripts/check-environment.sh`.
+Run `./scripts/install-fedora-tools.sh` then `./scripts/check-environment.sh`.
 
-## GDB/core/perf restrictions
-Containers/security policy can restrict ptrace/core/perf. Do not disable security controls at random; use a local environment where debugging your own process is allowed.
+## Kernel / QEMU issues
+See Chapter 14 README and inspect Multiboot header, ELF entry, page tables and serial checkpoints before changing several subsystems at once.

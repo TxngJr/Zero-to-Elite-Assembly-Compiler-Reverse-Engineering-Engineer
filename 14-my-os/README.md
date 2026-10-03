@@ -31,7 +31,7 @@ Multiboot2 header
 - filesystem
 - SMP/APIC
 
-สิ่งเหล่านี้เป็น Chapter 15.
+หัวข้อเหล่านี้ศึกษาเชิง algorithm/designใน [Chapter 15 — Advanced OS](../15-advanced-os/README.md).
 
 ## Navigation
 - [Objectives](OBJECTIVES.md)
@@ -45,7 +45,7 @@ Multiboot2 header
 - [Answers / hints](ANSWERS.md)
 
 **Previous:** [Chapter 13 — OS Foundations](../13-os-foundations/README.md)  
-**Next:** Chapter 15 — Advanced OS (**not implemented yet**)
+**Next:** [Chapter 15 — Advanced OS](../15-advanced-os/README.md)
 
 ## Build kernel
 

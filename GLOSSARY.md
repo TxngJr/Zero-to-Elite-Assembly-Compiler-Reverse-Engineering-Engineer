@@ -1,32 +1,31 @@
 # Glossary
 
-- **ABI** — binary contractสำหรับ calls/registers/stack/object conventions.
-- **AST** — Abstract Syntax Tree.
-- **Basic Block / CFG** — straight-line IR region / graphของ control-flow edges.
-- **Compiler Frontend / Backend** — source analysis side / target-specific code-generation side.
-- **Dominator / Liveness / SSA** — core compiler control/data-flow concepts.
-- **ELF** — Executable and Linkable Format.
-- **EliteC** — educational EliteLang compiler driverจาก Chapters 09–12.
-- **EliteOS64** — educational freestanding x86-64 kernelจาก Chapter 14.
-- **Freestanding C** — C environmentที่ไม่ assume hosted runtime/standard libraryครบ.
-- **GDT** — Global Descriptor Table; segment descriptors/privilege metadataบน x86.
-- **IDT** — Interrupt Descriptor Table; maps vectorsไป interrupt/exception handlers.
-- **IR** — Intermediate Representation.
-- **ISA** — Instruction Set Architecture.
-- **Lexer / Parser / Token** — lexical/syntax compiler components.
-- **Long Mode** — x86-64 execution mode.
-- **Multiboot2** — bootloader↔kernel boot protocolใช้ใน EliteOS64.
-- **PIC** — legacy Programmable Interrupt Controller.
-- **PIT** — legacy Programmable Interval Timer.
-- **PMM** — Physical Memory Manager; manages physical frames.
-- **VMM** — Virtual Memory Manager; manages page-table mappings/address spaces.
-- **Page Table / TLB** — address-translation structures / translation cache.
-- **Huge Page** — mapping larger than base page; EliteOS boot uses 2 MiB pages.
-- **Identity Mapping** — virtual address equals physical address.
-- **TSS** — Task State Segment; x86-64 privileged stack/IST metadata among other roles.
-- **Ring 0 / Ring 3** — kernel/user privilege levels commonly used by operating systems.
-- **IRQ** — external interrupt request.
-- **EOI** — End Of Interrupt notification to interrupt controller.
-- **Register Allocation / Spill** — maps virtual values to hardware registers / memory fallback.
-- **Relocation / GOT / PLT** — linker/loader address-fixup and dynamic-linking mechanisms.
-- **DWARF** — debug metadata format.
+- **ABI** — binary contract for calls/registers/stack/object conventions.
+- **AST / IR / CFG / SSA** — compiler source tree / intermediate representation / control-flow graph / static single assignment.
+- **EliteC** — educational EliteLang compiler built in Chapters 09–12.
+- **EliteOS64** — educational x86-64 freestanding kernel built in Chapter 14.
+- **Process / Thread** — resource/address-space container / schedulable execution context.
+- **Context Switch** — saves/restores execution state to run another thread/process.
+- **TSS / RSP0 / IST** — x86-64 privileged stack and interrupt-stack metadata.
+- **Copy-on-Write (COW)** — shared read-only mapping copied lazily on write.
+- **VFS** — Virtual File System abstraction across filesystem backends.
+- **IPC** — Inter-Process Communication.
+- **Spinlock / Mutex / Atomic** — synchronization mechanisms with different waiting/ordering semantics.
+- **APIC / IOAPIC** — modern x86 interrupt-controller mechanisms.
+- **TLB Shootdown** — coordinated invalidation of cached translations across CPUs.
+- **Reverse Engineering** — reconstruction of program structure/behavior from authorized artifacts.
+- **Static Analysis** — analyzes artifact without executing target.
+- **Dynamic Analysis** — observes target during controlled execution.
+- **Cross Reference (Xref)** — reference from code/data to another address/symbol.
+- **Stripped Binary** — binary with selected symbols/debug metadata removed.
+- **ASLR / PIE / NX / RELRO** — common address-layout and binary hardening mechanisms.
+- **Sanitizer** — compiler instrumentation for detecting classes of runtime defects.
+- **ASan / UBSan** — AddressSanitizer / UndefinedBehaviorSanitizer.
+- **Fuzzing** — automated input generation/mutation to discover crashes/invariant failures.
+- **Regression Test** — test preserving a bug fix against recurrence.
+- **Root Cause** — underlying defect that creates the observed failure.
+- **Crash Site** — location where failure becomes visible; may differ from root cause.
+- **Checked Arithmetic** — arithmetic that verifies overflow conditions before committing result.
+- **PMM / VMM** — physical-frame manager / virtual-memory mapping manager.
+- **GDT / IDT** — x86 descriptor tables for segmentation/privilege and interrupt vectors.
+- **ELF / DWARF** — executable/linkable format / debug information format.

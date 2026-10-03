@@ -1,6 +1,6 @@
 # Zero to Elite Assembly, Compiler & Reverse Engineering Engineer
 
-หลักสูตร Systems Engineering แบบลงมือทำบน Fedora/x86-64 ตั้งแต่ Linux, C, Assembly, ABI, Architecture, ELF, Linker/Loader, Debugging, Compiler และตอนนี้ไปถึง **freestanding x86-64 kernel**
+หลักสูตร Systems Engineering แบบลงมือทำบน Fedora/x86-64 ครอบคลุม Linux, C, Assembly, ABI, Architecture, ELF, Linker/Loader, Debugging, Compiler, OS, Reverse Engineering และ Defensive Security Research.
 
 ## Learning loop
 
@@ -8,36 +8,24 @@
 Predict → Build → Run → Observe → Inspect → Debug → Modify → Explain
 ```
 
-## Stack ที่สร้างจริงแล้ว
+## End-to-end map
 
 ```text
-EliteLang Source
+Linux / C / Machine Model
   ↓
-Frontend → Typed AST
+x86-64 / ABI / Architecture
   ↓
-IR / CFG / Analysis
+ELF / Linker / Debugging
   ↓
-x86-64 Backend
+Compiler Frontend → IR → Backend → EliteC
   ↓
-EliteC Driver
+OS Foundations → EliteOS64 → Advanced OS Models
   ↓
-ELF User-Space Executable
-
-and
-
-Firmware / GRUB
+Reverse Engineering
   ↓
-Multiboot2
+Defensive Security Lab
   ↓
-32-bit Early Boot
-  ↓
-Long Mode + Page Tables + GDT
-  ↓
-EliteOS64 Kernel
-  ↓
-IDT / PIC / PIT / Keyboard
-  ↓
-PMM / Heap / Mini Shell
+Final Capstone
 ```
 
 ## Implemented Chapters
@@ -57,36 +45,54 @@ PMM / Heap / Mini Shell
 - [12 — My Compiler: EliteC](12-my-compiler/README.md)
 - [13 — OS Foundations](13-os-foundations/README.md)
 - [14 — My OS: EliteOS64](14-my-os/README.md)
+- [15 — Advanced OS](15-advanced-os/README.md)
+- [16 — Reverse Engineering](16-reverse-engineering/README.md)
+- [17 — Defensive Security Lab](17-security-lab/README.md)
 
-บท 15–18 ยังอยู่ใน [COURSE_MAP.md](COURSE_MAP.md) และยังไม่สร้าง directory.
+Chapter 18 Final Capstoneยังไม่ถูกสร้าง.
 
-## EliteC
+## Advanced OS
+
+Chapter 15ใช้ executable simulatorsเพื่อพิสูจน์ mechanismsก่อน kernel integration:
+
+- round-robin scheduler
+- fork/copy-on-write address spaces
+- bounded pipe IPC
+- in-memory VFS path lookup
+
+เอกสารเชื่อม conceptsไป TSS/ring3/context switching/syscalls/APIC/SMP โดยระบุชัดว่าไม่ได้อ้างว่าฟีเจอร์เหล่านี้ integrateเข้า EliteOS64 Chapter 14แล้ว.
+
+## Reverse Engineering Scope
+
+Chapter 16ใช้เฉพาะ course-owned binariesหรือ targetsที่ได้รับอนุญาต:
 
 ```text
-.el → tokens → AST → type checking → IR → x86-64 assembly → ELF
+provenance/hash
+→ ELF triage
+→ symbols/strings
+→ disassembly
+→ CFG/data-flow
+→ GDB observations
+→ evidence-backed reconstruction
 ```
 
-EliteC CLI รองรับ check/intermediate emits/optimization/build/run และ end-to-end testsผ่าน recursion, loops, short-circuit และ >6 arguments.
+มี O0/O2/PIE/stripped challenge variants, binary-report generator และ CFG edge extractor.
 
-## EliteOS64
+## Defensive Security Scope
 
-Chapter 14 kernelทำจริง:
+Chapter 17จำกัดที่ course codeและ defensive workflow:
 
-- Multiboot2 header
-- protected-mode → long-mode transition
-- 4 GiB identity mapด้วย 2 MiB pages
-- GDT
-- serial + VGA text console
-- IDT
-- legacy PIC remap
-- PIT timer
-- keyboard IRQ subset
-- Multiboot memory-map parser
-- physical frame bump allocator
-- kernel bump heap
-- mini shell
+```text
+reproduce
+→ sanitizer evidence
+→ root cause
+→ patch
+→ regression
+→ fuzz fixed code
+→ report
+```
 
-Processes, user mode, scheduler, syscalls, VFS/filesystem และ SMPอยู่ใน Chapter 15 roadmap.
+Injected bugถูก compileผ่าน flagเฉพาะสำหรับ local sanitizer lab. Default testsใช้ fixed parser.
 
 ## Verify
 
@@ -96,13 +102,11 @@ Processes, user mode, scheduler, syscalls, VFS/filesystem และ SMPอยู
 ./scripts/verify-chapters.sh
 ```
 
-Chapter 14 `make test` ตรวจ kernel ELF/Multiboot/image mechanicsโดยไม่ require VM. ถ้ามี GRUB/QEMU tooling:
+## Authorization / Safety
 
-```bash
-make -C 14-my-os iso
-make -C 14-my-os qemu-test
-```
+Reverse engineeringและ security researchใน repositoryนี้ใช้เฉพาะ:
+- code/binariesที่สร้างใน course
+- softwareที่คุณเขียนเอง
+- open-source / CTF / training targetsที่อนุญาตชัดเจน
 
-## Safety
-
-งาน debugging/reverse engineering/vulnerability researchในบทถัดไปใช้เฉพาะ course binaries, open-source software, CTF/training targets หรือ softwareที่มีสิทธิ์วิเคราะห์ และเน้น defensive understanding/root-cause/fixing.
+เนื้อหาเน้น debugging, compatibility, root-cause analysis, patching, fuzzingและ defensive engineering ไม่ใช่ unauthorized access, credential theft, persistence หรือ deploymentของ malicious payloads.

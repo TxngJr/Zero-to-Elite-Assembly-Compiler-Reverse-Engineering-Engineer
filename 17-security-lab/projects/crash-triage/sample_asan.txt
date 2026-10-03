@@ -1,0 +1,5 @@
+==123==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x000000000000
+WRITE of size 19 at 0x000000000000 thread T0
+    #0 0x000000000001 in parse_packet parser.c:25
+    #1 0x000000000002 in main sanitizer_demo.c:16
+SUMMARY: AddressSanitizer: stack-buffer-overflow parser.c:25 in parse_packet
