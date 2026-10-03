@@ -1,27 +1,32 @@
 # Glossary
 
+- **ABI** — binary contractสำหรับ calls/registers/stack/object conventions.
 - **AST** — Abstract Syntax Tree.
-- **Basic Block** — straight-line IR region ending in a terminator.
-- **CFG** — graph of basic blocks and control-flow edges.
-- **Compiler Frontend** — lexer, parser, semantic/type analysis.
-- **Compiler Backend** — target-specific instruction selection, ABI lowering, allocation and emission.
-- **Dominator** — A dominates B if every entry-to-B path passes A.
-- **IR** — Intermediate Representation between source AST and target code.
-- **Instruction Selection** — maps IR operations/patterns to target instructions.
-- **Interference Graph** — edges mean two live values cannot share one physical register.
-- **Lexer** — transforms characters into tokens.
-- **Liveness** — data-flow information describing values needed before redefinition.
-- **Parser** — transforms tokens into structured syntax/AST.
-- **Phi Node** — SSA merge operation selecting predecessor-specific values.
-- **Register Allocation** — maps virtual values to physical registers and spills.
-- **Semantic Analysis** — validates names, types and language rules beyond grammar.
-- **SSA** — Static Single Assignment; each SSA name has one definition.
-- **Spill** — places a value in memory instead of keeping it in a physical register.
-- **Token** — categorized lexical unit.
-- **Virtual Register / Temporary** — compiler value name, not necessarily a CPU register.
-- **Short-Circuit Evaluation** — boolean evaluation that may skip RHS.
-- **ABI** — binary contract for calls/registers/stack/object conventions.
+- **Basic Block / CFG** — straight-line IR region / graphของ control-flow edges.
+- **Compiler Frontend / Backend** — source analysis side / target-specific code-generation side.
+- **Dominator / Liveness / SSA** — core compiler control/data-flow concepts.
 - **ELF** — Executable and Linkable Format.
-- **Relocation** — linker/loader patch record for address-dependent values.
-- **GOT / PLT** — dynamic/PIC data-address and procedure-linkage mechanisms.
-- **DWARF** — debug metadata format commonly stored in ELF.
+- **EliteC** — educational EliteLang compiler driverจาก Chapters 09–12.
+- **EliteOS64** — educational freestanding x86-64 kernelจาก Chapter 14.
+- **Freestanding C** — C environmentที่ไม่ assume hosted runtime/standard libraryครบ.
+- **GDT** — Global Descriptor Table; segment descriptors/privilege metadataบน x86.
+- **IDT** — Interrupt Descriptor Table; maps vectorsไป interrupt/exception handlers.
+- **IR** — Intermediate Representation.
+- **ISA** — Instruction Set Architecture.
+- **Lexer / Parser / Token** — lexical/syntax compiler components.
+- **Long Mode** — x86-64 execution mode.
+- **Multiboot2** — bootloader↔kernel boot protocolใช้ใน EliteOS64.
+- **PIC** — legacy Programmable Interrupt Controller.
+- **PIT** — legacy Programmable Interval Timer.
+- **PMM** — Physical Memory Manager; manages physical frames.
+- **VMM** — Virtual Memory Manager; manages page-table mappings/address spaces.
+- **Page Table / TLB** — address-translation structures / translation cache.
+- **Huge Page** — mapping larger than base page; EliteOS boot uses 2 MiB pages.
+- **Identity Mapping** — virtual address equals physical address.
+- **TSS** — Task State Segment; x86-64 privileged stack/IST metadata among other roles.
+- **Ring 0 / Ring 3** — kernel/user privilege levels commonly used by operating systems.
+- **IRQ** — external interrupt request.
+- **EOI** — End Of Interrupt notification to interrupt controller.
+- **Register Allocation / Spill** — maps virtual values to hardware registers / memory fallback.
+- **Relocation / GOT / PLT** — linker/loader address-fixup and dynamic-linking mechanisms.
+- **DWARF** — debug metadata format.

@@ -1,6 +1,6 @@
 # Zero to Elite Assembly, Compiler & Reverse Engineering Engineer
 
-หลักสูตร Systems Programming บน Fedora/x86-64 ตั้งแต่ Linux, C, Assembly, ABI, Architecture, ELF, Linker/Loader, Debugging และตอนนี้ถึง **Compiler Frontend → IR → x86-64 Backend**
+หลักสูตร Systems Engineering แบบลงมือทำบน Fedora/x86-64 ตั้งแต่ Linux, C, Assembly, ABI, Architecture, ELF, Linker/Loader, Debugging, Compiler และตอนนี้ไปถึง **freestanding x86-64 kernel**
 
 ## Learning loop
 
@@ -8,24 +8,36 @@
 Predict → Build → Run → Observe → Inspect → Debug → Modify → Explain
 ```
 
-## Compiler pipeline ที่สร้างจริง
+## Stack ที่สร้างจริงแล้ว
 
 ```text
-EliteLang source
+EliteLang Source
   ↓
-Lexer → Parser → Typed AST
+Frontend → Typed AST
   ↓
-IR / Basic Blocks / CFG
-  ↓
-Dominators / Liveness / Local Optimization / SSA Concepts
+IR / CFG / Analysis
   ↓
 x86-64 Backend
   ↓
-GNU Assembly
+EliteC Driver
   ↓
-GCC/Clang assembler + linker
+ELF User-Space Executable
+
+and
+
+Firmware / GRUB
   ↓
-ELF executable
+Multiboot2
+  ↓
+32-bit Early Boot
+  ↓
+Long Mode + Page Tables + GDT
+  ↓
+EliteOS64 Kernel
+  ↓
+IDT / PIC / PIT / Keyboard
+  ↓
+PMM / Heap / Mini Shell
 ```
 
 ## Implemented Chapters
@@ -42,22 +54,39 @@ ELF executable
 - [09 — Compiler Frontend](09-compiler-frontend/README.md)
 - [10 — Compiler IR](10-compiler-ir/README.md)
 - [11 — Compiler Backend](11-compiler-backend/README.md)
+- [12 — My Compiler: EliteC](12-my-compiler/README.md)
+- [13 — OS Foundations](13-os-foundations/README.md)
+- [14 — My OS: EliteOS64](14-my-os/README.md)
 
-บท 12–18 ยังอยู่ใน [COURSE_MAP.md](COURSE_MAP.md) และยังไม่สร้าง directory.
+บท 15–18 ยังอยู่ใน [COURSE_MAP.md](COURSE_MAP.md) และยังไม่สร้าง directory.
 
-## EliteLang snapshot
+## EliteC
 
-รองรับ:
-- `int`, `bool`
-- functions และ recursion
-- typed parameters/returns
-- local variables + assignment
-- arithmetic/comparisons
-- `&&` / `||` แบบ short-circuit
-- `if/else`, `while`
-- calls รวม >6 integer arguments
+```text
+.el → tokens → AST → type checking → IR → x86-64 assembly → ELF
+```
 
-Backend ปัจจุบันใช้ stack-slot แบบ spill-everything เพื่อให้ correctness/ABI ชัดก่อน register allocation จริง.
+EliteC CLI รองรับ check/intermediate emits/optimization/build/run และ end-to-end testsผ่าน recursion, loops, short-circuit และ >6 arguments.
+
+## EliteOS64
+
+Chapter 14 kernelทำจริง:
+
+- Multiboot2 header
+- protected-mode → long-mode transition
+- 4 GiB identity mapด้วย 2 MiB pages
+- GDT
+- serial + VGA text console
+- IDT
+- legacy PIC remap
+- PIT timer
+- keyboard IRQ subset
+- Multiboot memory-map parser
+- physical frame bump allocator
+- kernel bump heap
+- mini shell
+
+Processes, user mode, scheduler, syscalls, VFS/filesystem และ SMPอยู่ใน Chapter 15 roadmap.
 
 ## Verify
 
@@ -67,6 +96,13 @@ Backend ปัจจุบันใช้ stack-slot แบบ spill-everything 
 ./scripts/verify-chapters.sh
 ```
 
+Chapter 14 `make test` ตรวจ kernel ELF/Multiboot/image mechanicsโดยไม่ require VM. ถ้ามี GRUB/QEMU tooling:
+
+```bash
+make -C 14-my-os iso
+make -C 14-my-os qemu-test
+```
+
 ## Safety
 
-งาน debugging/reverse engineering/vulnerability research ในบทต่อไปใช้เฉพาะ course binaries, open-source software, CTF/training targets หรือ software ที่มีสิทธิ์วิเคราะห์ และเน้น defensive understanding/root-cause/fixing.
+งาน debugging/reverse engineering/vulnerability researchในบทถัดไปใช้เฉพาะ course binaries, open-source software, CTF/training targets หรือ softwareที่มีสิทธิ์วิเคราะห์ และเน้น defensive understanding/root-cause/fixing.

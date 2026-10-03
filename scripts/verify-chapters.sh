@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
+
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+
 required=(
   README.md COURSE_MAP.md STUDY_GUIDE.md GLOSSARY.md TROUBLESHOOTING.md
   00-linux-lab/README.md 00-linux-lab/THEORY.md 00-linux-lab/LABS.md 00-linux-lab/MASTERY_TEST.md
@@ -15,18 +17,44 @@ required=(
   09-compiler-frontend/README.md 09-compiler-frontend/THEORY.md 09-compiler-frontend/LABS.md 09-compiler-frontend/MASTERY_TEST.md
   10-compiler-ir/README.md 10-compiler-ir/THEORY.md 10-compiler-ir/LABS.md 10-compiler-ir/MASTERY_TEST.md
   11-compiler-backend/README.md 11-compiler-backend/THEORY.md 11-compiler-backend/LABS.md 11-compiler-backend/MASTERY_TEST.md
+  12-my-compiler/README.md 12-my-compiler/THEORY.md 12-my-compiler/LABS.md 12-my-compiler/MASTERY_TEST.md
+  13-os-foundations/README.md 13-os-foundations/THEORY.md 13-os-foundations/LABS.md 13-os-foundations/MASTERY_TEST.md
+  14-my-os/README.md 14-my-os/THEORY.md 14-my-os/LABS.md 14-my-os/MASTERY_TEST.md
 )
+
 fail=0
+
 for f in "${required[@]}"; do
-  if [[ -s "$ROOT/$f" ]]; then echo "[OK] $f"; else echo "[FAIL] missing/empty $f"; fail=1; fi
+  if [[ -s "$ROOT/$f" ]]; then
+    echo "[OK] $f"
+  else
+    echo "[FAIL] missing/empty $f"
+    fail=1
+  fi
 done
-for script in "$ROOT"/scripts/*.sh "$ROOT"/*/tests/*.sh "$ROOT"/*/projects/*/*.sh; do
+
+for script in "$ROOT"/scripts/*.sh "$ROOT"/*/tests/*.sh "$ROOT"/*/projects/*/*.sh "$ROOT"/*/scripts/*.sh; do
   [[ -e "$script" ]] || continue
   bash -n "$script" || fail=1
 done
-for ch in 00-linux-lab 01-computer-foundations 02-c-machine-model 03-x86-64-assembly 04-abi-syscalls 05-computer-architecture 06-elf 07-linker-loader 08-debugging 09-compiler-frontend 10-compiler-ir 11-compiler-backend; do
-  echo "--- testing $ch ---"
-  if ! make -C "$ROOT/$ch" clean test; then fail=1; fi
+
+for py in   "$ROOT"/09-compiler-frontend/projects/elite-frontend/*.py   "$ROOT"/10-compiler-ir/projects/elite-ir/*.py   "$ROOT"/11-compiler-backend/projects/elite-backend/*.py   "$ROOT"/12-my-compiler/projects/elitec/*.py   "$ROOT"/13-os-foundations/projects/page-walk-sim/*.py   "$ROOT"/14-my-os/tests/*.py
+do
+  [[ -e "$py" ]] || continue
+  python3 -m py_compile "$py" || fail=1
 done
-if (( fail )); then echo '[FAIL] Chapter verification failed.'; exit 1; fi
-echo '[OK] Chapters 00–11 verified.'
+
+for ch in   00-linux-lab   01-computer-foundations   02-c-machine-model   03-x86-64-assembly   04-abi-syscalls   05-computer-architecture   06-elf   07-linker-loader   08-debugging   09-compiler-frontend   10-compiler-ir   11-compiler-backend   12-my-compiler   13-os-foundations   14-my-os
+do
+  echo "--- testing $ch ---"
+  if ! make -C "$ROOT/$ch" clean test; then
+    fail=1
+  fi
+done
+
+if (( fail )); then
+  echo '[FAIL] Chapter verification failed.'
+  exit 1
+fi
+
+echo '[OK] Chapters 00–14 verified.'

@@ -6,7 +6,7 @@
 typed AST → IR/CFG → x86-64 codegen → .s → assembler/linker → ELF → run
 ```
 
-Backend รุ่นนี้ตั้งใจเรียบง่าย: virtual valuesทุกตัวถูก spillลง stack slotsก่อน เพื่อแยก **correct code generation** ออกจาก register allocation. จากนั้นบทนี้อธิบาย liveness/interference/linear-scan/graph coloringเป็นขั้นต่อยอด.
+Backend รุ่นนี้ตั้งใจเรียบง่าย: virtual valuesทุกตัวถูก spillลง stack slotsก่อน เพื่อแยก correct code generation ออกจาก register allocation.
 
 ## Navigation
 - [Objectives](OBJECTIVES.md)
@@ -20,7 +20,7 @@ Backend รุ่นนี้ตั้งใจเรียบง่าย: virt
 - [Answers / hints](ANSWERS.md)
 
 **Previous:** [Chapter 10 — Compiler IR](../10-compiler-ir/README.md)  
-**Next:** Chapter 12 — Build a Compiler (**not implemented yet**)
+**Next:** [Chapter 12 — My Compiler](../12-my-compiler/README.md)
 
 ```bash
 make clean test
