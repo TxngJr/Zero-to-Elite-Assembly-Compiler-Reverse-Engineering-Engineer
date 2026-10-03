@@ -1,6 +1,8 @@
 # Zero to Elite Assembly, Compiler & Reverse Engineering Engineer
 
-หลักสูตร Systems Engineering แบบลงมือทำบน Fedora/x86-64 ครอบคลุม Linux, C, Assembly, ABI, Architecture, ELF, Linker/Loader, Debugging, Compiler, OS, Reverse Engineering และ Defensive Security Research.
+หลักสูตร Systems Engineering แบบลงมือทำบน Fedora/x86-64 ตั้งแต่พื้นฐานคอมพิวเตอร์และ C ไปจนถึง Assembly, ABI, ELF, Compiler, Operating Systems, Reverse Engineering และ Defensive Security Research.
+
+**Chapters 00–18 implemented.**
 
 ## Learning loop
 
@@ -8,27 +10,80 @@
 Predict → Build → Run → Observe → Inspect → Debug → Modify → Explain
 ```
 
-## End-to-end map
+## Full Roadmap
 
 ```text
-Linux / C / Machine Model
-  ↓
-x86-64 / ABI / Architecture
-  ↓
-ELF / Linker / Debugging
-  ↓
-Compiler Frontend → IR → Backend → EliteC
-  ↓
-OS Foundations → EliteOS64 → Advanced OS Models
-  ↓
-Reverse Engineering
-  ↓
-Defensive Security Lab
-  ↓
-Final Capstone
+00 Linux Lab
+→ 01 Computer Foundations
+→ 02 C Machine Model
+→ 03 x86-64 Assembly
+→ 04 ABI & Syscalls
+→ 05 Computer Architecture
+→ 06 ELF
+→ 07 Linker & Loader
+→ 08 Debugging
+→ 09 Compiler Frontend
+→ 10 Compiler IR
+→ 11 Compiler Backend
+→ 12 EliteC
+→ 13 OS Foundations
+→ 14 EliteOS64
+→ 15 Advanced OS
+→ 16 Reverse Engineering
+→ 17 Defensive Security Lab
+→ 18 Final Capstone
 ```
 
-## Implemented Chapters
+## Major artifacts
+
+### EliteC compiler
+
+```text
+EliteLang
+→ lexer/parser/type checker
+→ IR/CFG
+→ x86-64 backend
+→ GNU assembly
+→ ELF executable
+```
+
+Supports functions, recursion, `int/bool`, mutable locals, arithmetic, comparisons, short-circuit logic, `if/else`, `while` and >6 integer arguments.
+
+### EliteOS64
+
+Freestanding x86-64 educational kernel:
+
+```text
+Multiboot2
+→ protected mode
+→ page tables
+→ long mode
+→ GDT
+→ serial/VGA
+→ IDT
+→ PIC/PIT/keyboard
+→ physical frame allocator
+→ kernel heap
+→ shell
+```
+
+Chapter 15 extends OS knowledge through deterministic scheduler/COW/VFS/IPC simulators and advanced design topics such as ring3, TSS, syscalls, APIC/SMP and synchronization.
+
+### Binary analysis / defensive security
+
+Authorized/course-owned targets only:
+
+```text
+ELF triage
+→ disassembly
+→ CFG/data-flow
+→ GDB evidence
+→ reconstruction
+→ local sanitizer/fuzz root-cause workflow
+→ patch + regression
+```
+
+## Chapters
 
 - [00 — Linux Systems Laboratory](00-linux-lab/README.md)
 - [01 — Computer Foundations](01-computer-foundations/README.md)
@@ -48,53 +103,9 @@ Final Capstone
 - [15 — Advanced OS](15-advanced-os/README.md)
 - [16 — Reverse Engineering](16-reverse-engineering/README.md)
 - [17 — Defensive Security Lab](17-security-lab/README.md)
+- [18 — Final Capstone](18-capstone/README.md)
 
-Chapter 18 Final Capstoneยังไม่ถูกสร้าง.
-
-## Advanced OS
-
-Chapter 15ใช้ executable simulatorsเพื่อพิสูจน์ mechanismsก่อน kernel integration:
-
-- round-robin scheduler
-- fork/copy-on-write address spaces
-- bounded pipe IPC
-- in-memory VFS path lookup
-
-เอกสารเชื่อม conceptsไป TSS/ring3/context switching/syscalls/APIC/SMP โดยระบุชัดว่าไม่ได้อ้างว่าฟีเจอร์เหล่านี้ integrateเข้า EliteOS64 Chapter 14แล้ว.
-
-## Reverse Engineering Scope
-
-Chapter 16ใช้เฉพาะ course-owned binariesหรือ targetsที่ได้รับอนุญาต:
-
-```text
-provenance/hash
-→ ELF triage
-→ symbols/strings
-→ disassembly
-→ CFG/data-flow
-→ GDB observations
-→ evidence-backed reconstruction
-```
-
-มี O0/O2/PIE/stripped challenge variants, binary-report generator และ CFG edge extractor.
-
-## Defensive Security Scope
-
-Chapter 17จำกัดที่ course codeและ defensive workflow:
-
-```text
-reproduce
-→ sanitizer evidence
-→ root cause
-→ patch
-→ regression
-→ fuzz fixed code
-→ report
-```
-
-Injected bugถูก compileผ่าน flagเฉพาะสำหรับ local sanitizer lab. Default testsใช้ fixed parser.
-
-## Verify
+## Verify entire course
 
 ```bash
 ./scripts/install-fedora-tools.sh
@@ -102,11 +113,16 @@ Injected bugถูก compileผ่าน flagเฉพาะสำหรับ 
 ./scripts/verify-chapters.sh
 ```
 
-## Authorization / Safety
+## Final capstone
 
-Reverse engineeringและ security researchใน repositoryนี้ใช้เฉพาะ:
-- code/binariesที่สร้างใน course
-- softwareที่คุณเขียนเอง
-- open-source / CTF / training targetsที่อนุญาตชัดเจน
+```bash
+make -C 18-capstone clean test
+```
 
-เนื้อหาเน้น debugging, compatibility, root-cause analysis, patching, fuzzingและ defensive engineering ไม่ใช่ unauthorized access, credential theft, persistence หรือ deploymentของ malicious payloads.
+The capstone integrates compiler, ELF/RE tooling, EliteOS64 kernel validation, Advanced-OS simulations and defensive regression tests, then produces a SHA-256 artifact manifest and audit summary.
+
+## Scope / honesty
+
+This repository is an educational systems-engineering course, not a claim that the compiler or kernel is production ready.
+
+Chapter 15 explicitly distinguishes host-side algorithm simulations from kernel-integrated features. Reverse engineering/security work is limited to course-owned or explicitly authorized targets and focuses on debugging, compatibility, root-cause analysis, patching and defensive testing.

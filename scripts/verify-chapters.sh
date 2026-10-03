@@ -23,6 +23,8 @@ required=(
   15-advanced-os/README.md 15-advanced-os/THEORY.md 15-advanced-os/LABS.md 15-advanced-os/MASTERY_TEST.md
   16-reverse-engineering/README.md 16-reverse-engineering/THEORY.md 16-reverse-engineering/LABS.md 16-reverse-engineering/MASTERY_TEST.md
   17-security-lab/README.md 17-security-lab/THEORY.md 17-security-lab/LABS.md 17-security-lab/MASTERY_TEST.md
+  18-capstone/README.md 18-capstone/THEORY.md 18-capstone/LABS.md 18-capstone/MASTERY_TEST.md
+  18-capstone/FINAL_CHECKLIST.md 18-capstone/PORTFOLIO_TEMPLATE.md 18-capstone/REPORT_TEMPLATE.md
 )
 
 fail=0
@@ -42,13 +44,13 @@ do
   bash -n "$script" || fail=1
 done
 
-for py in   "$ROOT"/09-compiler-frontend/projects/elite-frontend/*.py   "$ROOT"/10-compiler-ir/projects/elite-ir/*.py   "$ROOT"/11-compiler-backend/projects/elite-backend/*.py   "$ROOT"/12-my-compiler/projects/elitec/*.py   "$ROOT"/13-os-foundations/projects/page-walk-sim/*.py   "$ROOT"/14-my-os/tests/*.py   "$ROOT"/15-advanced-os/projects/vm-cow-sim/*.py   "$ROOT"/16-reverse-engineering/projects/binary-report/*.py   "$ROOT"/16-reverse-engineering/projects/cfg-extract/*.py   "$ROOT"/17-security-lab/projects/crash-triage/*.py
+for py in   "$ROOT"/09-compiler-frontend/projects/elite-frontend/*.py   "$ROOT"/10-compiler-ir/projects/elite-ir/*.py   "$ROOT"/11-compiler-backend/projects/elite-backend/*.py   "$ROOT"/12-my-compiler/projects/elitec/*.py   "$ROOT"/13-os-foundations/projects/page-walk-sim/*.py   "$ROOT"/14-my-os/tests/*.py   "$ROOT"/15-advanced-os/projects/vm-cow-sim/*.py   "$ROOT"/16-reverse-engineering/projects/binary-report/*.py   "$ROOT"/16-reverse-engineering/projects/cfg-extract/*.py   "$ROOT"/17-security-lab/projects/crash-triage/*.py   "$ROOT"/18-capstone/projects/final-audit/*.py
 do
   [[ -e "$py" ]] || continue
   python3 -m py_compile "$py" || fail=1
 done
 
-for ch in   00-linux-lab   01-computer-foundations   02-c-machine-model   03-x86-64-assembly   04-abi-syscalls   05-computer-architecture   06-elf   07-linker-loader   08-debugging   09-compiler-frontend   10-compiler-ir   11-compiler-backend   12-my-compiler   13-os-foundations   14-my-os   15-advanced-os   16-reverse-engineering   17-security-lab
+for ch in   00-linux-lab   01-computer-foundations   02-c-machine-model   03-x86-64-assembly   04-abi-syscalls   05-computer-architecture   06-elf   07-linker-loader   08-debugging   09-compiler-frontend   10-compiler-ir   11-compiler-backend   12-my-compiler   13-os-foundations   14-my-os   15-advanced-os   16-reverse-engineering   17-security-lab   18-capstone
 do
   echo "--- testing $ch ---"
   if ! make -C "$ROOT/$ch" clean test; then
@@ -61,4 +63,4 @@ if (( fail )); then
   exit 1
 fi
 
-echo '[OK] Chapters 00–17 verified.'
+echo '[OK] Chapters 00–18 verified. Course implementation complete.'

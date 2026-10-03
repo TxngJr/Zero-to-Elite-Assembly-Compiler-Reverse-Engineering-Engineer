@@ -2,27 +2,21 @@
 
 บทนี้ฝึก **defensive vulnerability research** บน code/binariesที่อยู่ใน repositoryนี้เท่านั้น.
 
-เป้าหมาย:
+Workflow:
 
 ```text
 find a defect
 → reproduce locally
-→ collect sanitizer/debugger evidence
+→ sanitizer/debugger evidence
 → minimize input
-→ identify root cause
+→ root cause
 → patch
-→ add regression test
+→ regression
 → fuzz fixed code
-→ document impact without weaponizing
+→ defensive report
 ```
 
-บทนี้ไม่สอน:
-- bypass authentication/licensing
-- persistence
-- credential theft
-- malware deployment
-- exploitation of third-party systems
-- hiding activity
+ไม่สอน unauthorized exploitation, credential theft, persistence, malicious deployment หรือการซ่อน activity.
 
 ทุก bug demoเป็น compile-time injected bugใน course project และ testsปกติใช้ fixed implementation.
 
@@ -38,7 +32,7 @@ find a defect
 - [Answers / hints](ANSWERS.md)
 
 **Previous:** [Chapter 16 — Reverse Engineering](../16-reverse-engineering/README.md)  
-**Next:** Chapter 18 — Final Capstone (**not implemented yet**)
+**Next:** [Chapter 18 — Final Capstone](../18-capstone/README.md)
 
 ```bash
 make clean test

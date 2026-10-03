@@ -1,43 +1,45 @@
 # Troubleshooting
 
-## Chapter 15 simulator differs from real kernel behavior
-Expected. Chapter 15 projects model algorithms in user-space so they can be tested deterministically. They do not claim to implement privileged context switching, TSS, CR3 changes or real filesystem drivers.
+## Full verifier takes a while
+Expected. Chapters 00–18 build and test many compiler/kernel/analysis projects. For one area, run that chapter's `make test` first.
 
-## vm-cow-sim reports missing page
-The simulator only translates pages explicitly mapped with `map_zero`. Check page alignment and virtual page number.
+## Capstone audit fails at EliteC
+Run:
+```bash
+make -C 12-my-compiler clean test
+python3 12-my-compiler/projects/elitec/elitec.py --check 18-capstone/examples/capstone.el
+```
 
-## Challenge-suite build fails on `-no-pie`
-Course targets Fedora/Linux x86-64 GCC/Clang. Confirm compiler driver supports the Linux option and that you are not using a non-Linux target.
+## Capstone audit fails at ELF/RE tools
+Confirm `file`, `readelf`, `objdump`, `nm`, `strings` are installed from binutils/file packages.
 
-## `strip` not found
-`strip` comes from GNU binutils, installed as a required course package.
+## Capstone kernel gate fails
+Run `make -C 14-my-os clean test` first. The automated capstone does not require QEMU/GRUB; it validates the kernel ELF and Multiboot2 contract.
 
-## binary-report fails on a random third-party file
-The tool is intended for authorized/course ELF binaries. Confirm the target is an ELF file and that `file/readelf/nm/strings` are installed.
+## Capstone Advanced-OS gate fails
+Run `make -C 15-advanced-os clean test`. These are host-side deterministic models, not privileged kernel execution.
 
-## cfg-extract misses an indirect branch
-Expected. It is a small text parser over objdump output, not a full recursive-descent disassembler. Indirect jump/call resolution is intentionally an advanced challenge.
+## Capstone RE gate fails
+Run `make -C 16-reverse-engineering clean test`. Targets are generated locally from course source.
 
-## PIE address in GDB differs from objdump
-Runtime PIE has a load base. Use `info proc mappings` and image-relative offsets rather than comparing absolute addresses directly.
+## Capstone defensive gate fails
+Run `make -C 17-security-lab clean test`. Default tests use fixed code; the deliberately buggy sanitizer target is separate.
 
-## Parser lab rejects oversized packet
-That is the fixed behavior. The default build checks both destination capacity and available input bytes.
+## audit-summary git_commit says unavailable
+The audit can run from a source archive without `.git`. Artifact hashes/test evidence remain useful; record the source release/archive provenance manually.
 
-## sanitizer-demo exits non-zero
-Expected. `make sanitizer-demo` intentionally builds the compile-time injected defect and expects ASan/UBSan to terminate/report it. It is a local course demonstration only.
+## QEMU / hardware
+Chapter 14 QEMU smoke testing remains optional for the standard root verifier. Emulator success does not prove all physical hardware is supported.
 
-## ASan is unavailable
-GCC/Clang Fedora packages normally provide sanitizer runtimes. Base `make test` does not require running the buggy sanitizer demo; `make sanitize` does require sanitizer support.
-
-## Fuzzing finds no crash
-A clean deterministic smoke run is not proof of security. Increase corpus quality/coverage tooling in authorized local work, then keep discovered cases as regression tests.
-
-## Security report severity feels uncertain
-Do not infer severity from bug class alone. State reachability, attacker control, privileges and demonstrated impact, and mark uncertainty explicitly.
+## Reverse engineering / security scope
+Do not substitute arbitrary third-party targets for course binaries unless you have explicit authorization. The course completion criteria require no unauthorized testing.
 
 ## gcc / clang / gdb / binutils missing
-Run `./scripts/install-fedora-tools.sh` then `./scripts/check-environment.sh`.
+Run:
+```bash
+./scripts/install-fedora-tools.sh
+./scripts/check-environment.sh
+```
 
-## Kernel / QEMU issues
-See Chapter 14 README and inspect Multiboot header, ELF entry, page tables and serial checkpoints before changing several subsystems at once.
+## Environment-specific debugging restrictions
+ptrace/core/perf/virtualization can be restricted by containers or policy. Do not disable security controls at random; use an environment where debugging your own code is permitted.

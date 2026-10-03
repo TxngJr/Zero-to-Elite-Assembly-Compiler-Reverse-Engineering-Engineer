@@ -20,7 +20,9 @@
 | 15 | Advanced OS | ✅ Implemented |
 | 16 | Reverse Engineering | ✅ Implemented |
 | 17 | Defensive Security Lab | ✅ Implemented |
-| 18 | Final Capstone | Planned |
+| 18 | Final Capstone | ✅ Implemented |
+
+## Dependency chain
 
 ```text
 00 Linux → 01 Foundations → 02 C
@@ -31,3 +33,7 @@
 → 16 Reverse Engineering → 17 Defensive Security
 → 18 Final Capstone
 ```
+
+## Completion
+
+The implementation roadmap is complete at Chapter 18. Further work belongs to extension tracks such as full SSA/register allocation, user-mode EliteOS integration, VFS/filesystems, APIC/SMP, richer RE tooling and extended defensive fuzzing.
