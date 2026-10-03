@@ -7,7 +7,7 @@ symptom → reproduce → narrow → observe state → form hypothesis
         → test hypothesis → root cause → fix → regression test
 ```
 
-เราดีบักทั้ง source, assembly, registers, memory, signals, optimized code และ core dumps โดยใช้ **course-owned toy programs** เท่านั้น
+เราดีบัก source, assembly, registers, memory, signals, optimized code และ core dumps โดยใช้ course-owned toy programs.
 
 ## Navigation
 - [Objectives](OBJECTIVES.md)
@@ -19,10 +19,9 @@ symptom → reproduce → narrow → observe state → form hypothesis
 - [Common mistakes](COMMON_MISTAKES.md)
 - [Mastery test](MASTERY_TEST.md)
 - [Answers / hints](ANSWERS.md)
-- [Course map](../COURSE_MAP.md)
 
 **Previous:** [Chapter 07 — Linker & Loader](../07-linker-loader/README.md)  
-**Next:** Chapter 09 — Compiler Frontend (**not implemented yet**)
+**Next:** [Chapter 09 — Compiler Frontend](../09-compiler-frontend/README.md)
 
 ```bash
 make clean test

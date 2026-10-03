@@ -1,42 +1,27 @@
 # Glossary
 
-- **ABI** — binary contract เช่น calling convention, register preservation, stack alignment, object conventions
-- **Address** — location identifierใน address space; user processทั่วไปเห็น virtual address
-- **Alignment** — boundary requirement/propertyของ data/stack/segments
-- **Assembler / Assembly** — toolที่ encode assembly และ textual ISA representation
-- **ASLR** — Address Space Layout Randomization; randomize mapping basesเพื่อลด fixed-address assumptions
-- **Bit / Byte / Nibble** — binary unit, C byte, 4 bits
-- **Breakpoint** — debugger stop conditionที่ control-flow location
-- **Cache / Cache Line** — fast storage hierarchyและ transfer/tag granule
-- **Caller-saved / Callee-saved** — ABI register preservation responsibilities
-- **Core Dump** — process memory/register snapshotตอน abnormal termination
-- **CPI / IPC** — cycles per instruction / instructions per cycle; workload-dependent
-- **DWARF** — common debug-information formatใน ELF toolchains
-- **ELF** — Executable and Linkable Format
-- **ELF Section** — logical collectionสำหรับ linker/tools เช่น .text/.symtab
-- **ELF Segment** — runtime mapping unitจาก program header เช่น PT_LOAD
-- **Executable** — imageที่ loaderใช้สร้าง processได้เมื่อ contractsถูกต้อง
-- **GOT** — Global Offset Table; dynamic/PIC address indirection table
-- **ISA** — programmer-visible instruction/register architecture
-- **Kernel** — privileged OS component
-- **Linker** — resolve symbols, lay out output, apply relocations
-- **Loader / Dynamic Loader** — map executable/shared objects, relocate/resolve runtime dependencies
-- **Machine Code** — encoded ISA instructions
-- **Microarchitecture** — internal implementationของ ISA เช่น pipeline/cache/rename
-- **MMU** — address translation/protection hardware
-- **Object File** — relocatable compiled/assembled artifact
-- **Out-of-Order Execution** — execute ready operationsไม่จำเป็นต้องตาม program order ขณะรักษา architectural semantics
-- **Page / Page Fault** — VM translation granule / exception requiring OS handling
-- **PIE / PIC** — position-independent executable / position-independent code
-- **PLT** — Procedure Linkage Table; dynamic call-stub mechanismใน ELF ecosystems
-- **Process** — executing program instanceพร้อม address space/resources
-- **Register / RFLAGS** — ISA-visible storage / x86 condition-control flags
-- **Relocation** — record/instructionให้ linker/loader patch address-dependent value
-- **SONAME** — shared-library compatibility identityใน dynamic metadata
-- **Symbol** — named code/data/entity used by linker/debugger/loaderตาม table/context
-- **Syscall** — controlled user→kernel service request
-- **TLB** — cacheของ virtual→physical translations
-- **Undefined Behavior** — C behaviorที่ standardไม่กำหนด requirements
-- **Virtual Memory** — process address-space abstraction mapped/protectedโดย OS+MMU
-- **Watchpoint** — debugger stop conditionที่ memory access/change
-- **Weak Symbol** — lower-precedence/default-like symbol bindingตาม linker rules
+- **AST** — Abstract Syntax Tree.
+- **Basic Block** — straight-line IR region ending in a terminator.
+- **CFG** — graph of basic blocks and control-flow edges.
+- **Compiler Frontend** — lexer, parser, semantic/type analysis.
+- **Compiler Backend** — target-specific instruction selection, ABI lowering, allocation and emission.
+- **Dominator** — A dominates B if every entry-to-B path passes A.
+- **IR** — Intermediate Representation between source AST and target code.
+- **Instruction Selection** — maps IR operations/patterns to target instructions.
+- **Interference Graph** — edges mean two live values cannot share one physical register.
+- **Lexer** — transforms characters into tokens.
+- **Liveness** — data-flow information describing values needed before redefinition.
+- **Parser** — transforms tokens into structured syntax/AST.
+- **Phi Node** — SSA merge operation selecting predecessor-specific values.
+- **Register Allocation** — maps virtual values to physical registers and spills.
+- **Semantic Analysis** — validates names, types and language rules beyond grammar.
+- **SSA** — Static Single Assignment; each SSA name has one definition.
+- **Spill** — places a value in memory instead of keeping it in a physical register.
+- **Token** — categorized lexical unit.
+- **Virtual Register / Temporary** — compiler value name, not necessarily a CPU register.
+- **Short-Circuit Evaluation** — boolean evaluation that may skip RHS.
+- **ABI** — binary contract for calls/registers/stack/object conventions.
+- **ELF** — Executable and Linkable Format.
+- **Relocation** — linker/loader patch record for address-dependent values.
+- **GOT / PLT** — dynamic/PIC data-address and procedure-linkage mechanisms.
+- **DWARF** — debug metadata format commonly stored in ELF.

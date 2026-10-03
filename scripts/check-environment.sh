@@ -60,7 +60,7 @@ echo; echo '=== Summary ==='
 echo "Required tools: $ok present, $missing missing"
 echo "Optional tools: $optional_ok present, $optional_missing missing"
 if (( missing == 0 )); then
-  echo 'Ready for Chapters 00–08.'
+  echo 'Ready for Chapters 00–11.'
   exit 0
 else
   echo 'Install missing required tools before continuing.'
