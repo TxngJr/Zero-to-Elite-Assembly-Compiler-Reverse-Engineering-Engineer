@@ -1,40 +1,55 @@
 # Troubleshooting
 
-## `gcc: command not found`
-ตรวจ `command -v gcc`; Fedoraติดตั้งด้วย `./scripts/install-fedora-tools.sh` หรือ `sudo dnf install gcc`.
+## gcc / clang / readelf / objdump not found
+Fedora: run `./scripts/install-fedora-tools.sh`. GNU ELF toolsมาจาก `binutils`.
 
-## `Permission denied` ตอนรัน script
-ตรวจ execute bitด้วย `ls -l`; ใช้ `chmod +x script.sh` หรือ `bash script.sh`. ถ้า filesystemเป็น `noexec` ให้ตรวจ `findmnt -T . -o OPTIONS`.
+## Permission deniedตอน run script
+ตรวจ execute bitด้วย `ls -l`, filesystem `noexec`ด้วย `findmnt -T . -o OPTIONS`.
 
-## GDB ไม่มี symbols / variable optimized out
-ใช้ `-g`; สำหรับ labแรกลอง `-O0` แต่จำว่า optimizerไม่รับประกัน source variableต้องมี storage slot.
+## GDB says no debugging symbols
+Buildด้วย `-g`; optimized codeยังอาจมี `<optimized out>`.
 
-## `readelf` / `objdump` / `as` ไม่พบ
-Fedora packageหลักคือ `binutils`.
+## Assembly operand size mismatch
+ตรวจ register/memory widthsและ BYTE/WORD/DWORD/QWORD PTR.
 
-## Assembly error: operand size mismatch
-ตรวจ widthของ register/memory operandและใส่ `BYTE/WORD/DWORD/QWORD PTR` เมื่อ assembler inferไม่ได้.
+## Function C↔Assembly crash
+ตรวจ SysV AMD64 callee-saved registers, stack restore/alignment, prototype widths.
 
-## Assembly รันแล้วค่าด้านบนของ RAXหาย
-การเขียน EAX zero-extendsไป RAX. ถ้าตั้งใจแก้เฉพาะ 8/16 bitsให้ตรวจ AL/AX semantics.
+## Raw syscall arg4ผิด
+Linux x86-64 arg4อยู่ R10; `syscall` clobber RCX/R11.
 
-## Function C↔Assembly crashแบบสุ่ม
-ตรวจ System V AMD64 ABI: callee-saved registers, stack restore, alignmentก่อน nested call และ prototype/type width.
+## ELF inspector rejects a valid exotic ELF
+Course inspector intentionallyรองรับ ELF64 little-endian conventional countsเท่านั้น. ใช้ `readelf`/elfutilsสำหรับ ELF32, big-endian หรือ extended numbering.
 
-## Raw syscallใช้ arg4แล้วผลแปลก
-Linux x86-64 syscall arg4ใช้ R10 ไม่ใช่ RCX; `syscall` clobber RCX/R11.
+## readelf sectionกับ runtime mappingดูไม่ตรง
+Loader map **segments** ไม่ใช่ section-by-section. ใช้ `readelf -lW` และ section-to-segment mapping.
 
-## `_start` binary segfaultเมื่อใส่ message length symbol
-ใน GNU Intel syntax symbol expressionอาจถูกตีความเป็น memory operand. ตรวจ disassembly; ใช้ immediate syntaxเช่น `OFFSET`เมื่อจำเป็นและยืนยัน bytesด้วย `objdump -d -Mintel`.
+## undefined reference
+นี่เป็น link-time symbol resolution failure: ใช้ `nm`, `readelf -s`, ตรวจ object/library orderและ definitions.
 
-## `perf stat` ขึ้น permission denied / not supported
-perfเป็น optional lab. ตรวจ `kernel.perf_event_paranoid`, container/VM restrictions และ policyของเครื่อง; ไม่ต้องลด security settingเพียงเพื่อให้บทผ่าน.
+## cannot open shared object file
+ตรวจ `readelf -d app`, `DT_NEEDED`, SONAME, RUNPATH/RPATH และ loader search. อย่า copy .soสุ่มเข้า system directories.
 
-## `make: *** missing separator`
-Make recipeต้องขึ้นต้นด้วย TABจริง.
+## $ORIGINหายจาก linker option
+Quoteเป็น `'$ORIGIN'` (หรือ escapeตาม shell/build system) เพื่อไม่ให้ shell expandก่อนถึง linker.
 
-## Sanitizer report ยาว
-อ่าน error class → source frameแรกของเรา → address/operation → allocation/free history → root cause → fix → rerun.
+## GDB batch testถูก skip
+Chapter 08 testจะ skip debugger-specific assertionถ้า environmentไม่มี `gdb`; Fedora course machineควรติดตั้ง GDBผ่าน installerแล้ว run `make inspect`/GDB labsเอง.
 
-## GCC/Clang diagnosticsต่างกัน
-Compilerสามารถเตือนต่างกันได้. ใช้ language/ABI contract, tests และ inspectionเป็นหลัก ไม่คาด wordingเหมือนกัน.
+## GDB ptrace permission error
+Container/security policyอาจห้าม ptrace. อย่าปิด security controlsแบบสุ่ม; ใช้ local Fedora environmentที่อนุญาต debuggingของ processตัวเอง.
+
+## ไม่มี core fileหลัง crash
+ตรวจ `ulimit -c` และ Fedora/systemd-coredump config. ใช้ `coredumpctl list/info/debug` เมื่อระบบใช้ systemd-coredump. GDB direct crash labใช้แทนได้.
+
+## perf permission denied
+perfเป็น optional. ตรวจ policy/kernel settings; ไม่ต้องลด securityเพียงเพื่อให้ testsผ่าน.
+
+## Sanitizer reportยาว
+อ่าน error class → first relevant source frame → invalid operation/address → allocation/free origin → root cause → fix → rerun.
+
+## make missing separator
+Recipe lineต้องเริ่ม TABจริง.
+
+## GCC/Clang outputต่างกัน
+Compilerมี diagnostics/codegenต่างกันได้. ยึด language/ABI/ELF contracts + tests + runtime evidence.

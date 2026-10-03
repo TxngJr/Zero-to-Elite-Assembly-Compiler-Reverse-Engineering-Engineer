@@ -1,41 +1,42 @@
 # Glossary
 
-- **ABI (Application Binary Interface)** — ข้อตกลงระดับ binary เช่น calling convention, register preservation, stack alignment และ object-format conventions
-- **Address** — หมายเลขตำแหน่งใน address space; processทั่วไปเห็น virtual address ไม่ใช่ physical RAMโดยตรง
-- **Alignment** — ข้อกำหนด/คุณสมบัติว่าข้อมูลหรือ stackควรเริ่มที่ addressตาม boundaryหนึ่ง
-- **Assembler** — แปลง assembly source เป็น machine-code object
-- **Assembly** — textual representationของ ISA instructionsและ assembler directives
-- **Binary** — ระบบเลขฐานสอง หรือไฟล์ binaryตามบริบท
-- **Bit / Byte / Nibble** — 1 bit, C byte, และ 4 bitsตามลำดับ
-- **Branch Predictor** — microarchitectural mechanismเดาทิศทาง/targetของ control flowเพื่อ fetchล่วงหน้า
-- **Cache** — storageขนาดเล็ก/เร็วที่เก็บ copiesของข้อมูลจากระดับช้ากว่าเป็น blocks/lines
-- **Cache Line** — granuleที่ cacheทั่วไปใช้ transfer/tagข้อมูล; exact sizeเป็น microarchitecture-specific
-- **Caller-saved Register** — registerที่ callerต้องเก็บเองหากต้องการค่าเดิมหลัง function call
-- **Callee-saved Register** — registerที่ calleeต้อง restoreหากแก้ไขตาม ABI
-- **Compiler** — แปลง source languageไป representation/targetที่ต่ำกว่า
-- **CPU / Core / Thread** — processor, execution core และ execution contextตามบริบท
-- **DWORD/QWORD** — คำเรียก 32/64-bit quantitiesใน low-level ecosystemบางส่วน
+- **ABI** — binary contract เช่น calling convention, register preservation, stack alignment, object conventions
+- **Address** — location identifierใน address space; user processทั่วไปเห็น virtual address
+- **Alignment** — boundary requirement/propertyของ data/stack/segments
+- **Assembler / Assembly** — toolที่ encode assembly และ textual ISA representation
+- **ASLR** — Address Space Layout Randomization; randomize mapping basesเพื่อลด fixed-address assumptions
+- **Bit / Byte / Nibble** — binary unit, C byte, 4 bits
+- **Breakpoint** — debugger stop conditionที่ control-flow location
+- **Cache / Cache Line** — fast storage hierarchyและ transfer/tag granule
+- **Caller-saved / Callee-saved** — ABI register preservation responsibilities
+- **Core Dump** — process memory/register snapshotตอน abnormal termination
+- **CPI / IPC** — cycles per instruction / instructions per cycle; workload-dependent
+- **DWARF** — common debug-information formatใน ELF toolchains
 - **ELF** — Executable and Linkable Format
-- **Executable** — ไฟล์ที่ loaderสามารถใช้สร้าง process imageได้เมื่อ contractถูกต้อง
-- **Heap** — dynamic allocation storageที่ allocatorจัดการ
-- **IPC / CPI** — instructions per cycle / cycles per instruction; workload-dependent performance metrics
-- **ISA** — Instruction Set Architecture: programmer-visible instruction/register behavior
-- **Kernel** — privileged OS componentจัดการ process, memory, devices, filesystems, syscalls
-- **Linker / Loader** — resolve/compose object code และ map executable/shared objectsเข้าสู่ process
+- **ELF Section** — logical collectionสำหรับ linker/tools เช่น .text/.symtab
+- **ELF Segment** — runtime mapping unitจาก program header เช่น PT_LOAD
+- **Executable** — imageที่ loaderใช้สร้าง processได้เมื่อ contractsถูกต้อง
+- **GOT** — Global Offset Table; dynamic/PIC address indirection table
+- **ISA** — programmer-visible instruction/register architecture
+- **Kernel** — privileged OS component
+- **Linker** — resolve symbols, lay out output, apply relocations
+- **Loader / Dynamic Loader** — map executable/shared objects, relocate/resolve runtime dependencies
 - **Machine Code** — encoded ISA instructions
-- **Microarchitecture** — วิธีภายในที่ CPU implement ISA เช่น pipelines/caches/rename/ROB
-- **MMU** — hardware logicเกี่ยวกับ address translation/protection
-- **Object File** — relocatable compiled/assembled artifactที่มี code/data/symbols/relocations
-- **Out-of-Order Execution** — execute operationsตาม readinessมากกว่าลำดับ source ขณะที่รักษา architectural semanticsตอน commit
-- **Page** — translation/protection granuleของ virtual memory
-- **Page Fault** — exceptionที่ต้องให้ OSจัดการ translation/permission/storage conditionหนึ่ง
-- **Pointer** — C valueที่ชี้ object/functionตาม language rules
+- **Microarchitecture** — internal implementationของ ISA เช่น pipeline/cache/rename
+- **MMU** — address translation/protection hardware
+- **Object File** — relocatable compiled/assembled artifact
+- **Out-of-Order Execution** — execute ready operationsไม่จำเป็นต้องตาม program order ขณะรักษา architectural semantics
+- **Page / Page Fault** — VM translation granule / exception requiring OS handling
+- **PIE / PIC** — position-independent executable / position-independent code
+- **PLT** — Procedure Linkage Table; dynamic call-stub mechanismใน ELF ecosystems
 - **Process** — executing program instanceพร้อม address space/resources
-- **Register** — architectural storageที่ instructionsเข้าถึงโดยตรง
-- **RFLAGS** — x86 flags registerที่เก็บ condition/control bits เช่น ZF/CF/OF/SF
-- **Syscall** — controlled requestจาก user modeเข้าสู่ kernel service
-- **Stack** — LIFO structure/พื้นที่ call-related storageตาม context; exact layoutขึ้นกับ ABI/compiler
-- **TLB** — Translation Lookaside Buffer; cacheของ virtual→physical translations
-- **Undefined Behavior** — C behaviorที่มาตรฐานไม่กำหนด requirementsเมื่อโปรแกรมละเมิด ruleนั้น
-- **Virtual Memory** — address-space abstractionที่ MMU/OS mapไป physical storageและ enforce permissions
-- **Word** — natural-size/context-specific term; ห้ามสมมติขนาดตายตัว
+- **Register / RFLAGS** — ISA-visible storage / x86 condition-control flags
+- **Relocation** — record/instructionให้ linker/loader patch address-dependent value
+- **SONAME** — shared-library compatibility identityใน dynamic metadata
+- **Symbol** — named code/data/entity used by linker/debugger/loaderตาม table/context
+- **Syscall** — controlled user→kernel service request
+- **TLB** — cacheของ virtual→physical translations
+- **Undefined Behavior** — C behaviorที่ standardไม่กำหนด requirements
+- **Virtual Memory** — process address-space abstraction mapped/protectedโดย OS+MMU
+- **Watchpoint** — debugger stop conditionที่ memory access/change
+- **Weak Symbol** — lower-precedence/default-like symbol bindingตาม linker rules

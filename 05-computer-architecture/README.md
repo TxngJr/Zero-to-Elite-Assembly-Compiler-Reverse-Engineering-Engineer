@@ -17,7 +17,7 @@
 - [Course map](../COURSE_MAP.md)
 
 **Previous:** [Chapter 04](../04-abi-syscalls/README.md)  
-**Next:** Chapter 06 — ELF Internals (**not implemented yet**)
+**Next:** [Chapter 06 — ELF Internals](../06-elf/README.md)
 
 ```bash
 make clean test
