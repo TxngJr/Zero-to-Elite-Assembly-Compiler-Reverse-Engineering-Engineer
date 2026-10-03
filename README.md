@@ -1,20 +1,18 @@
 # Zero to Elite Assembly, Compiler & Reverse Engineering Engineer
 
-หลักสูตร Systems Programming แบบลงมือทำบน Fedora/x86-64 ตั้งแต่พื้นฐาน Linux และการแทนข้อมูล ไปจนถึง C ในมุมมองของเครื่อง ก่อนต่อยอดสู่ Assembly, Compiler, OS และ Reverse Engineering ในบทถัดไป
+หลักสูตร Systems Programming แบบลงมือทำบน Fedora/x86-64 ตั้งแต่ Linux, การแทนข้อมูล, C machine model ไปจนถึง Assembly, ABI/syscalls และ Computer Architecture ก่อนต่อยอดสู่ ELF, Compiler, OS และ Reverse Engineering
 
 > เป้าหมายคือสร้างพื้นฐานที่ลึกพอให้คุณออกแบบ ตรวจสอบ ดีบัก และเรียนหัวข้อ systems ขั้นสูงต่อด้วยตนเอง—not เพื่ออ้างว่าจบ repo เดียวแล้วรู้ทุกอย่าง
 
 ## วิธีเรียนหลัก
 
-ทุกบทใช้วงจร:
-
 ```text
 Predict → Build → Run → Observe → Inspect → Debug → Modify → Explain
 ```
 
-ก่อนรันตัวอย่าง ให้เขียนสิ่งที่คาดว่าจะเกิดขึ้น จากนั้นตรวจผลจริงด้วย compiler/debugger/เครื่องมือระบบ แล้วอธิบายด้วยภาษาของตัวเองว่าเหตุใดจึงเกิดผลนั้น
+ก่อนรันตัวอย่าง ให้เขียนสิ่งที่คาดว่าจะเกิดขึ้น จากนั้นตรวจผลจริงด้วย compiler/debugger/disassembler/system tools แล้วอธิบายด้วยภาษาของตัวเอง
 
-## Mental model ที่เราจะสร้าง
+## Mental model ที่เรากำลังสร้าง
 
 ```text
 Source Code
@@ -25,29 +23,23 @@ Assembly
     ↓
 Machine Code
     ↓
+ABI / Linkage
+    ↓
 Executable
     ↓
-Linux Loader
+Linux Loader / Syscalls
     ↓
 Process
     ↓
-CPU Execution
+ISA Execution
+    ↓
+Microarchitecture / Memory Hierarchy
 ```
 
 ในช่วง Reverse Engineering เราจะฝึกมองย้อนกลับ:
 
 ```text
-Machine Code
-    ↓
-Disassembly
-    ↓
-Control Flow
-    ↓
-Functions
-    ↓
-Data Structures
-    ↓
-Approximate Program Logic
+Machine Code → Disassembly → Control Flow → Functions → Data Structures → Approximate Program Logic
 ```
 
 ## บทที่พร้อมเรียนตอนนี้
@@ -55,64 +47,55 @@ Approximate Program Logic
 - [00 — Linux Systems Laboratory](00-linux-lab/README.md)
 - [01 — Computer Foundations](01-computer-foundations/README.md)
 - [02 — C Machine Model](02-c-machine-model/README.md)
+- [03 — x86-64 Assembly](03-x86-64-assembly/README.md)
+- [04 — System V AMD64 ABI & Linux Syscalls](04-abi-syscalls/README.md)
+- [05 — Computer Architecture](05-computer-architecture/README.md)
 
-บท 03–18 มี roadmap ใน [COURSE_MAP.md](COURSE_MAP.md) แต่ยังไม่สร้าง directory จนกว่าจะถึงรอบถัดไป
+บท 06–18 มี roadmap ใน [COURSE_MAP.md](COURSE_MAP.md) แต่ยังไม่สร้าง chapter directory จนกว่าจะถึงรอบถัดไป
 
 ## แพลตฟอร์ม
 
-หลักสูตรอ้างอิง Fedora Linux บน x86-64/AMD64 เป็นหลัก ใช้ GCC/Clang, GNU binutils, GDB และเครื่องมือ command line มาตรฐาน
-
-ตรวจเครื่อง:
-
-```bash
-./scripts/check-environment.sh
-```
-
-ติดตั้งเครื่องมือพื้นฐานบน Fedora:
+หลักสูตรอ้างอิง Fedora Linux บน x86-64/AMD64 เป็นหลัก ใช้ GCC/Clang, GNU binutils, GDB, strace และเครื่องมือ command line มาตรฐาน. Chapter 05 ใช้ `perf` เป็น optional measurement toolเมื่อระบบอนุญาต
 
 ```bash
 ./scripts/install-fedora-tools.sh
-```
-
-ตรวจ Chapter 00–02:
-
-```bash
+./scripts/check-environment.sh
 ./scripts/verify-chapters.sh
 ```
 
-## โครงสร้าง
+## โครงสร้างปัจจุบัน
 
 ```text
 .
+├── 00-linux-lab/
+├── 01-computer-foundations/
+├── 02-c-machine-model/
+├── 03-x86-64-assembly/
+├── 04-abi-syscalls/
+├── 05-computer-architecture/
+├── scripts/
 ├── README.md
 ├── COURSE_MAP.md
 ├── STUDY_GUIDE.md
 ├── GLOSSARY.md
-├── TROUBLESHOOTING.md
-├── scripts/
-├── 00-linux-lab/
-├── 01-computer-foundations/
-└── 02-c-machine-model/
+└── TROUBLESHOOTING.md
 ```
 
-แต่ละ chapter แยก Objectives, Theory, Labs, Exercises, Challenges, Mastery Test, Answers, Common Mistakes, examples/projects และ tests เพื่อให้เรียนแบบเป็นขั้นตอน
-
-## Prerequisites
-
-ต้องใช้เพียงพื้นฐานการใช้งานคอมพิวเตอร์และความตั้งใจทำ lab เอง ไม่สมมติว่าผู้เรียนรู้ Assembly, Compiler หรือ OS มาก่อน ความรู้ programming เดิมมีประโยชน์แต่ไม่จำเป็น
+แต่ละ chapter มี Objectives, Theory, Labs, Exercises, Challenges, Mastery Test, Answers, Common Mistakes, examples/projects และ tests ตามความเหมาะสม
 
 ## กฎการทำแบบฝึก
 
-1. อ่านโจทย์โดยยังไม่ดู `ANSWERS.md`
+1. อ่านโดยยังไม่เปิดเฉลย
 2. เขียน prediction
-3. ทดลองจริง
-4. เก็บ output ที่สำคัญ
-5. อธิบายความต่างระหว่าง prediction กับผลจริง
-6. แก้ exercise/challenge
-7. ทำ mastery test เมื่อจบบท
+3. build/run
+4. เก็บ evidence
+5. inspectระดับ source/assembly/register/memory/syscallตามบท
+6. อธิบายความต่างระหว่าง prediction กับ observation
+7. แก้ exercise/challenge
+8. ผ่าน mastery gateก่อนขยับบท
 
-อ่านรายละเอียดใน [STUDY_GUIDE.md](STUDY_GUIDE.md)
+อ่าน [STUDY_GUIDE.md](STUDY_GUIDE.md) เพิ่มเติม
 
 ## Safety / Reverse Engineering Scope
 
-บทด้าน reverse engineering และ vulnerability research ในอนาคตจะจำกัดอยู่กับโปรแกรมที่สร้างเพื่อหลักสูตร, open-source software, CTF/training binaries, หรือซอฟต์แวร์ที่ผู้เรียนมีสิทธิ์วิเคราะห์ เน้น debugging, understanding, root-cause analysis และ defensive research ไม่สร้างเนื้อหาสำหรับ credential theft, persistence, destructive payloads หรือ unauthorized access
+งาน reverse engineering/vulnerability researchในอนาคตจำกัดที่ course binaries, open-source software, CTF/training targets หรือซอฟต์แวร์ที่มีสิทธิ์วิเคราะห์ เน้น understanding/debugging/root-cause/defensive research ไม่สร้าง workflowสำหรับ credential theft, persistence, destructive payloads หรือ unauthorized access

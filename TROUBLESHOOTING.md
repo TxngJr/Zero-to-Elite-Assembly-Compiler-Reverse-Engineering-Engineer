@@ -1,31 +1,40 @@
 # Troubleshooting
 
 ## `gcc: command not found`
-ตรวจด้วย `command -v gcc`. ถ้าไม่มีและใช้ Fedora ให้รัน `./scripts/install-fedora-tools.sh` หรือ `sudo dnf install gcc`.
+ตรวจ `command -v gcc`; Fedoraติดตั้งด้วย `./scripts/install-fedora-tools.sh` หรือ `sudo dnf install gcc`.
 
 ## `Permission denied` ตอนรัน script
-ตรวจ `ls -l script.sh`. ถ้าไม่มี execute bit ใช้ `chmod +x script.sh`. อีกทางคือ `bash script.sh`.
+ตรวจ execute bitด้วย `ls -l`; ใช้ `chmod +x script.sh` หรือ `bash script.sh`. ถ้า filesystemเป็น `noexec` ให้ตรวจ `findmnt -T . -o OPTIONS`.
 
-## `Permission denied` ตอนรันไฟล์ใน filesystem ที่ mount `noexec`
-ตรวจ `findmnt -T . -o OPTIONS`. ย้าย lab ไป filesystem ที่อนุญาต execute แทนการเปลี่ยน mount โดยไม่เข้าใจผลกระทบ.
+## GDB ไม่มี symbols / variable optimized out
+ใช้ `-g`; สำหรับ labแรกลอง `-O0` แต่จำว่า optimizerไม่รับประกัน source variableต้องมี storage slot.
 
-## GDB แสดง `No debugging symbols found`
-compile ด้วย `-g`, เช่น `gcc -O0 -g demo.c -o demo`. หากเปิด optimization variables อาจถูกย้าย/รวม/ตัดออกได้.
+## `readelf` / `objdump` / `as` ไม่พบ
+Fedora packageหลักคือ `binutils`.
 
-## `fatal error: ...: No such file or directory`
-ดูว่าขาด header จาก development package ใดด้วย `dnf provides '*/header.h'`; อย่าติดตั้ง package สุ่ม ๆ โดยไม่อ่านผลค้นหา.
+## Assembly error: operand size mismatch
+ตรวจ widthของ register/memory operandและใส่ `BYTE/WORD/DWORD/QWORD PTR` เมื่อ assembler inferไม่ได้.
+
+## Assembly รันแล้วค่าด้านบนของ RAXหาย
+การเขียน EAX zero-extendsไป RAX. ถ้าตั้งใจแก้เฉพาะ 8/16 bitsให้ตรวจ AL/AX semantics.
+
+## Function C↔Assembly crashแบบสุ่ม
+ตรวจ System V AMD64 ABI: callee-saved registers, stack restore, alignmentก่อน nested call และ prototype/type width.
+
+## Raw syscallใช้ arg4แล้วผลแปลก
+Linux x86-64 syscall arg4ใช้ R10 ไม่ใช่ RCX; `syscall` clobber RCX/R11.
+
+## `_start` binary segfaultเมื่อใส่ message length symbol
+ใน GNU Intel syntax symbol expressionอาจถูกตีความเป็น memory operand. ตรวจ disassembly; ใช้ immediate syntaxเช่น `OFFSET`เมื่อจำเป็นและยืนยัน bytesด้วย `objdump -d -Mintel`.
+
+## `perf stat` ขึ้น permission denied / not supported
+perfเป็น optional lab. ตรวจ `kernel.perf_event_paranoid`, container/VM restrictions และ policyของเครื่อง; ไม่ต้องลด security settingเพียงเพื่อให้บทผ่าน.
 
 ## `make: *** missing separator`
-recipe ของ Makefile ต้องเริ่มด้วย TAB จริงใน Make แบบดั้งเดิม ตรวจด้วย editor ที่แสดง whitespace.
+Make recipeต้องขึ้นต้นด้วย TABจริง.
 
-## Sanitizer report ยาวมาก
-อ่านจากบรรทัด error type → stack trace แรกที่ชี้ไฟล์ของเรา → address/operation → allocation/free trace ที่เกี่ยวข้อง แก้ root cause ก่อน warning รอง.
+## Sanitizer report ยาว
+อ่าน error class → source frameแรกของเรา → address/operation → allocation/free history → root cause → fix → rerun.
 
-## ตัวแปรหายเมื่อดู assembly/GDB
-ลอง `-O0 -g` เพื่อ experiment ที่ตรง source มากขึ้น แต่จำไว้ว่า compiler ไม่รับประกันว่าทุก source variable ต้องมี memory slot.
-
-## `readelf`/`objdump` ไม่พบ
-ทั้งคู่มาจาก GNU binutils บน Fedora: `sudo dnf install binutils`.
-
-## Build ผ่าน GCC แต่ Clang เตือนต่างกัน
-อ่าน diagnostic ทั้งสองตัว Compiler มี wording/analysis ต่างกันได้ ใช้มาตรฐาน C และ tests เป็นหลักแทนการคาดว่า warnings ต้องเหมือนกันทุกบรรทัด
+## GCC/Clang diagnosticsต่างกัน
+Compilerสามารถเตือนต่างกันได้. ใช้ language/ABI contract, tests และ inspectionเป็นหลัก ไม่คาด wordingเหมือนกัน.

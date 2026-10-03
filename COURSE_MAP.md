@@ -5,9 +5,9 @@
 | 00 | Linux Systems Laboratory | ใช้ Fedora/Linux toolchain และตรวจ program/process ได้ | ✅ Implemented |
 | 01 | Computer Foundations | เข้าใจ bits, integers, memory และ CPU model | ✅ Implemented |
 | 02 | C Machine Model | เชื่อม C กับ bytes, addresses, compiler และ memory | ✅ Implemented |
-| 03 | x86-64 Assembly | เขียนและอ่าน x86-64 assembly | Planned |
-| 04 | ABI & Linux Syscalls | stack frames, calling convention, syscall | Planned |
-| 05 | Computer Architecture | pipeline, cache, MMU, CPU internals | Planned |
+| 03 | x86-64 Assembly | เขียน/อ่าน scalar x86-64, registers, flags, addressing, control flow | ✅ Implemented |
+| 04 | ABI & Linux Syscalls | System V AMD64 calling convention และ raw Linux syscall | ✅ Implemented |
+| 05 | Computer Architecture | pipeline, hazards, caches, VM/TLB, multicore, performance | ✅ Implemented |
 | 06 | ELF Internals | dissect ELF headers/sections/segments | Planned |
 | 07 | Linker & Loader | symbols, relocations, GOT/PLT, loading | Planned |
 | 08 | Debugging Engineering | GDB/core dumps/instruction-level debugging | Planned |
