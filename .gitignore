@@ -1,0 +1,28 @@
+# Compiled objects and executables
+*.o
+*.a
+*.so
+*.out
+*.exe
+*.dSYM/
+core
+core.*
+
+# Build directories
+build/
+**/build/
+
+# Coverage / profiling
+*.gcda
+*.gcno
+*.gcov
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store
+*~
+
+# Lab generated intermediates
+*.i
+*.s.tmp

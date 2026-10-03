@@ -1,0 +1,35 @@
+# Glossary
+
+- **ABI (Application Binary Interface)** — ข้อตกลงระดับ binary เช่น calling convention, object format และการจัดวางข้อมูลบางส่วน
+- **Address** — หมายเลขที่ใช้ระบุตำแหน่งใน address space; address ของ process โดยทั่วไปเป็น virtual address ไม่ใช่ physical RAM address โดยตรง
+- **Alignment** — ข้อกำหนด/คุณสมบัติว่าข้อมูลควรเริ่มที่ address ที่เป็นพหุคูณของค่าหนึ่ง
+- **Assembler** — แปลง assembly source เป็น machine-code object
+- **Binary** — ระบบเลขฐานสอง หรือโดยบริบทอาจหมายถึงไฟล์ executable/object ที่เก็บข้อมูลแบบ binary
+- **Bit** — หน่วยข้อมูลสองสถานะ 0/1
+- **Byte** — หน่วย addressable ที่ C กำหนดเป็น `CHAR_BIT` bits; บนระบบเป้าหมายทั่วไปคือ 8 bits
+- **Compiler** — แปลง source language ไปยัง representation/target ที่ต่ำกว่า เช่น assembly/object code
+- **CPU** — หน่วยประมวลผลที่ fetch/decode/execute instructions ตาม ISA และ microarchitecture
+- **Core** — execution core ภายใน CPU package; หนึ่ง core อาจรองรับมากกว่าหนึ่ง hardware thread
+- **DWORD/QWORD** — คำเรียกขนาด 32/64 bits ที่พบในเอกสาร low-level บาง ecosystem
+- **ELF** — Executable and Linkable Format ที่ Linux ใช้กับ executable, object และ shared library จำนวนมาก
+- **Executable** — ไฟล์ที่ระบบสามารถโหลดเพื่อสร้าง process ได้เมื่อรูปแบบและ permission ถูกต้อง
+- **Heap** — คำเรียกทั่วไปของพื้นที่ dynamic allocation ที่ allocator จัดการ; ไม่ควรตีความว่าเป็น region เดียวตายตัวเสมอ
+- **Instruction** — operation ที่ ISA นิยามให้ CPU execute
+- **Kernel** — ส่วน privileged ของ OS ที่จัดการ process, memory, filesystems, devices และ system calls
+- **Linker** — รวม object files/libraries, resolve symbols และ relocations เพื่อสร้าง output binary
+- **Loader** — ส่วนของระบบที่ map executable/shared objects และเตรียม process image ก่อนเริ่ม execution
+- **Machine Code** — encoding ของ instructions สำหรับ ISA ที่ CPU เข้าใจ
+- **Nibble** — 4 bits
+- **Object File** — ผลจาก assembler/compiler ที่มักมี code/data/symbols/relocations และยังต้อง link
+- **Pointer** — ค่าในภาษา C ที่ใช้ชี้ไปยัง object/function ตามกฎของภาษา ไม่ควรถูกลดทอนเป็นแค่ integer address เสมอ
+- **Process** — instance ของโปรแกรมที่กำลัง execute พร้อม address space และทรัพยากรของมัน
+- **Program** — ชุดคำสั่ง/ไฟล์โปรแกรม; เมื่อโหลดและ execute จึงเกิด process
+- **Register** — storage ขนาดเล็กภายใน CPU ที่ instruction ใช้งานได้โดยตรงตาม ISA
+- **Shell** — โปรแกรม command interpreter เช่น Bash
+- **Source Code** — ข้อความต้นฉบับในภาษาที่มนุษย์เขียน
+- **Stack** — โครงสร้าง LIFO และโดยบริบท process มักหมายถึงพื้นที่ที่ใช้กับ call frames; layout จริงขึ้นกับ ABI/compiler/optimization
+- **Terminal** — โปรแกรม/อุปกรณ์ที่ให้ UI สำหรับ terminal session; ไม่ใช่ shell เอง
+- **Thread** — execution context ภายใน process; หลาย threads อาจแชร์ address space
+- **Undefined Behavior** — พฤติกรรมที่มาตรฐานภาษา C ไม่กำหนดข้อบังคับผลลัพธ์เมื่อโปรแกรมทำสิ่งต้องห้ามนั้น
+- **User Space / Kernel Space** — ช่วง privilege/address-space concept ที่แยกโค้ดผู้ใช้จาก kernel
+- **Word** — ขนาดข้อมูลธรรมชาติ/คำเรียกที่ขึ้นกับ architecture และบริบท ไม่ควรสมมติขนาดตายตัว
