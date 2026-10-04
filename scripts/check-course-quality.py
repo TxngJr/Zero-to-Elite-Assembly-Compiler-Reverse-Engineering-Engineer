@@ -109,10 +109,38 @@ def main() -> int:
         if "Scoring — 100 points" not in mastery:
             fail(f"{chapter}: mastery has no explicit 100-point scoring", errors)
 
-        if worked.count("## Example ") < 3:
+        example_count = worked.count("## Example ")
+        if example_count < 3:
             fail(f"{chapter}: fewer than 3 worked examples", errors)
-        if worked.count("Expected key evidence") < 3:
-            fail(f"{chapter}: worked examples lack expected evidence", errors)
+
+        worked_markers = {
+            "Prediction": "prediction",
+            "Expected key evidence": "expected evidence",
+            "What may vary": "environment variance",
+            "Explain": "explanation",
+            "Modification": "modification",
+        }
+        for marker, description in worked_markers.items():
+            if worked.lower().count(marker.lower()) < example_count:
+                fail(
+                    f"{chapter}: not every worked example has "
+                    f"{description} marker {marker!r}",
+                    errors,
+                )
+
+        reflection_count = (
+            worked.lower().count("reflection")
+            + worked.lower().count("debug rule")
+        )
+        if reflection_count < example_count:
+            fail(
+                f"{chapter}: worked examples need reflection/debug guidance "
+                "for every example",
+                errors,
+            )
+
+        if "```" not in worked:
+            fail(f"{chapter}: worked examples contain no code/evidence block", errors)
 
         if "100" not in rubric or "Implementation" not in rubric:
             fail(f"{chapter}: rubric does not contain practical 100-point model", errors)

@@ -1,70 +1,123 @@
 # Worked Examples — ABI & Linux Syscalls
 
-ใช้ตัวอย่างเหล่านี้แบบ **Predict → Run → Observe → Explain → Modify**. Output ที่เป็น address/PID/version อาจต่างได้; ให้เทียบ key evidence ไม่ใช่เลข exact.
+## Example 1 — First six integer arguments
 
-## Example 1 — Eight integer arguments
-
-**Goal:** Eight integer arguments
-
-**Prediction:** ทำนายตำแหน่ง arg1..arg8
+**Goal:** พิสูจน์ SysV AMD64 calling conventionด้วย C caller + assembly callee.
 
 **Command / action:**
 
-```text
-inspect abi-lab disassembly/GDB
+```bash
+gcc -g -no-pie \
+  04-abi-syscalls/examples/abi_args_test.c \
+  04-abi-syscalls/examples/abi_args.s \
+  -o /tmp/abi_args
+
+/tmp/abi_args
+objdump -d -Mintel /tmp/abi_args | sed -n '/<main>/,/^$/p'
 ```
 
-**Expected key evidence:** 1–6: RDI RSI RDX RCX R8 R9; 7+ บน stack.
+**Prediction:** args 1–6ใช้ RDI, RSI, RDX, RCX, R8, R9.
 
-**What may vary:** addresses, tool version, symbol addresses, formatting หรือ environment-specific metadata ที่ไม่ใช่ semantic invariant.
+**Expected key evidence:** caller setup registersก่อน call; test resultถูก.
 
-**Explain:** เขียนเหตุผลเชื่อม observation กลับไปยัง contract/mental model ใน Theory.
+**What may vary:** compilerอาจ reorder temporary loadsแต่ call boundaryต้องตาม ABI.
 
-**Modification:** เปลี่ยน arg count เป็น 6/7/8 แล้ววาด stack.
+**Explain:** calling conventionเป็น binary contractคนละเรื่องกับ `call` instruction semantics.
 
-**Reflection:** ถ้าผลไม่ตรง prediction ให้บันทึกว่า prediction ผิดเพราะ concept ไหน—not แค่แก้จน output ตรง.
+**Modification:** เพิ่ม 7th/8th argumentใน local labแล้ว inspect stack.
 
-## Example 2 — Stack alignment
+**Failure mode:** อย่าคิดว่าทุก architecture/OSใช้ registersชุดนี้.
 
-**Goal:** Stack alignment
+**Reflection:** วาด stack ณ callee entry.
 
-**Prediction:** คำนวณ RSP mod 16 ก่อน call
+---
+
+## Example 2 — Callee-saved register
+
+**Goal:** เห็นหน้าที่ของ RBX/RBP/R12–R15.
 
 **Command / action:**
 
-```text
-break before call; p/x $rsp
+```bash
+gcc -g -no-pie \
+  04-abi-syscalls/examples/callee_saved_test.c \
+  04-abi-syscalls/examples/callee_saved.s \
+  -o /tmp/callee_saved
+
+/tmp/callee_saved
+objdump -d -Mintel /tmp/callee_saved
 ```
 
-**Expected key evidence:** caller ต้องจัด alignment ตาม SysV contract.
+**Prediction:** assembly functionที่เปลี่ยน callee-saved registerต้อง restoreก่อน return.
 
-**What may vary:** addresses, tool version, symbol addresses, formatting หรือ environment-specific metadata ที่ไม่ใช่ semantic invariant.
+**Expected key evidence:** push/popหรือ save/restore equivalent.
 
-**Explain:** เขียนเหตุผลเชื่อม observation กลับไปยัง contract/mental model ใน Theory.
+**What may vary:** register choiceใน C compiler output.
 
-**Modification:** เพิ่ม push หนึ่งครั้งแล้วหาวิธี restore alignment.
+**Explain:** caller-saved = callerรับผิดชอบถ้าต้องการค่าเดิม; callee-saved = functionที่เปลี่ยนต้องคืนค่า.
 
-**Reflection:** ถ้าผลไม่ตรง prediction ให้บันทึกว่า prediction ผิดเพราะ concept ไหน—not แค่แก้จน output ตรง.
+**Modification:** intentionally remove restoreใน local copyแล้วให้ testตรวจ corruption จากนั้นคืน fix.
 
-## Example 3 — Raw write syscall
+**Failure mode:** อย่าพึ่ง “มันดูเหมือนยังทำงาน” เพราะ callerอาจยังไม่ใช้ registerนั้นใน buildนี้.
 
-**Goal:** Raw write syscall
+**Reflection:** ทำไม ABI testต้องสร้าง callerที่ตรวจ preserved stateโดยตรง?
 
-**Prediction:** ตาม syscall number/args โดยไม่ใช้ libc
+---
+
+## Example 3 — Raw Linux syscall without libc
+
+**Goal:** แยก function call ABIจาก kernel syscall ABI.
 
 **Command / action:**
 
-```text
-run syscall example under strace
+```bash
+gcc -nostdlib -no-pie \
+  04-abi-syscalls/examples/syscall_hello.s \
+  -o /tmp/syscall_hello
+
+strace /tmp/syscall_hello
 ```
 
-**Expected key evidence:** write syscall เห็น fd/buffer/count และ return.
+**Prediction:** `write` syscallปรากฏใน straceและโปรแกรมจบผ่าน `exit` syscall.
 
-**What may vary:** addresses, tool version, symbol addresses, formatting หรือ environment-specific metadata ที่ไม่ใช่ semantic invariant.
+**Expected key evidence:** ไม่มี libc `main` requirement; entryอาจเป็น `_start`; syscall number/argsอยู่ registerตาม Linux x86-64 syscall ABI.
 
-**Explain:** เขียนเหตุผลเชื่อม observation กลับไปยัง contract/mental model ใน Theory.
+**What may vary:** addresses/strace formatting.
 
-**Modification:** เปลี่ยน fd เป็น stderr แล้วสังเกต.
+**Explain:** `syscall` instructionเปลี่ยน privilege/modeผ่าน kernel-defined interface; SysV function ABIกับ syscall ABIไม่เหมือนกันทั้งหมด (เช่น arg4).
 
-**Reflection:** ถ้าผลไม่ตรง prediction ให้บันทึกว่า prediction ผิดเพราะ concept ไหน—not แค่แก้จน output ตรง.
+**Modification:** เปลี่ยน string lengthอย่างถูกต้องแล้วดู `write(fd,buf,count)`.
 
+**Failure mode:** countเกิน buffer lengthอาจทำให้ kernelอ่าน bytesเกิน intended objectใน user address space.
+
+**Reflection:** เปรียบเทียบ R10 vs RCXบทบาทใน syscall/function ABI.
+
+---
+
+## Example 4 — syscall-cat project
+
+**Goal:** ใช้ read/write loopและ error/EOF semantics.
+
+**Command / action:**
+
+```bash
+make -C 04-abi-syscalls/projects/syscall-cat clean all
+printf 'alpha\nbeta\n' \
+  | 04-abi-syscalls/projects/syscall-cat/syscall-cat
+```
+
+ถ้าชื่อ artifactต่าง ให้ดู Makefile.
+
+**Prediction:** readคืนจำนวน bytes, 0=EOF, negative=error conventionหลัง syscall.
+
+**Expected key evidence:** outputตรง input.
+
+**What may vary:** read chunk boundaries.
+
+**Explain:** stream semanticsไม่ได้สัญญาว่า readครั้งเดียวได้ข้อมูลทั้งหมด.
+
+**Modification:** feed inputใหญ่กว่า internal bufferแล้วตรวจ loop.
+
+**Failure mode:** hard-codeว่า `read == requested_size` จึงผิด.
+
+**Reflection:** เขียน pseudocode robust read/write loopโดยจัด partial writes.

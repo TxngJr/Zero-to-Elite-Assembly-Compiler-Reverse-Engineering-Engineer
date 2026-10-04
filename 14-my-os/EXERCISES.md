@@ -1,57 +1,62 @@
-# Exercises
+# Exercises — EliteOS64
 
-## วิธีทำแบบฝึกหัดชุดนี้
+## Response contract
 
-ทุก numbered prompt ต้องตอบ 4 ส่วน: **Explain**, **Concrete example**, **Evidence**, และ **Boundary / misconception**. โจทย์คำนวณ/assembly/CFG ต้องแสดงขั้นตอน; โจทย์ code ต้องมี test/evidence.
+ทุกข้อให้มี **Explain + Concrete example + Evidence + misconception/boundary**. ถ้าพูดถึง hardware state ให้ชี้ source/objdump/serial logที่พิสูจน์ claim.
 
+## A. Boot / Long Mode
 
-1. kernel load address
-2. Multiboot magic
-3. header checksum
-4. early stack
-5. PML4
-6. PDPT
-7. 2 MiB PDE
-8. map 4 GiBต้องกี่ PDE
-9. CR4.PAE
-10. EFER.LME
-11. CR0.PG
-12. GDT selector 0x08
-13. far jump
-14. RSP setup
-15. kernel_main args
-16. no red zone
-17. serial base port
-18. VGA base
-19. IDT gate size
-20. vector 32
-21. vector 33
-22. PIC EOI
-23. master mask
-24. PIT frequency
-25. HLT
-26. IRETQ
-27. why ISRไม่ call Cใน baseline
-28. boot tags alignment
-29. mmap tag type
-30. usable memory type
-31. kernel_end
-32. boot-info reservation
-33. 4 KiB frame
-34. PMM bump
-35. PMM free limitation
-36. heap bump
-37. heap vs PMM
-38. shell deferred input
-39. volatile interrupt state limitation
-40. QEMU vs hardware
-41. ISO role
-42. GRUB role
-43. linker script role
-44. why ELF still useful for kernel
-45. why no libc
-46. ring0-only limitation
-47. higher-half kernel
-48. TSS future
-49. scheduler future
-50. filesystem future
+1. วาด GRUB Multiboot2 handoffถึง `_start`: EAX/EBXมีอะไร.
+2. คำนวณ Multiboot2 header checksumและอธิบาย placement requirement.
+3. อธิบายเหตุผลที่ early stackต้องสร้างเอง.
+4. จาก `boot.s` เขียนลำดับ CR4.PAE → CR3 → EFER.LME → CR0.PG → far jump และบอกว่าถ้าสลับแต่ละคู่ผิดจะเสี่ยงอะไร.
+5. คำนวณ 2048 × 2 MiB = 4 GiB mappingและชี้ PDE flags `0x83`.
+6. ใช้ `objdump`หา `wrmsr`, CR3 loadและ far transfer evidence.
+7. อธิบายทำไม kernel ELF64ยังมี 32-bit early codeได้.
+
+## B. Console / Interrupts
+
+8. Trace `console_putc`หนึ่ง byteไป COM1และ VGA.
+9. Trace serial input byteจาก COM1 LSR→`console_try_read`→`shell_feed_char`.
+10. วาด 16-byte IDT gateของ IRQ0 handler.
+11. อธิบาย PIC remap 0x20/0x28และทำไม IRQ vectorsไม่ควรชน CPU exceptions.
+12. คำนวณ PIT divisorสำหรับ 100 Hzจาก 1193182 Hz.
+13. อธิบาย EOIและผลถ้าลืมส่ง.
+14. เปรียบเทียบ IRQ0 stubกับ IRQ1 stub: stateไหนถูกอ่าน/แก้.
+15. อธิบายทำไม `timer_ticks >= 3` ทำให้ QEMU gateเป็น runtime proofมากกว่า static grep.
+
+## C. Exception Diagnostics
+
+16. วาด stack frameของ #UD (ไม่มี error code) และ #PF (มี error code) ก่อน `exception_common`.
+17. อธิบาย synthetic zeroใน no-error stub.
+18. อธิบาย CR2มีความหมายเฉพาะ page faultอย่างไร.
+19. อธิบายว่าทำไม current panic handler `noreturn` ทำให้ destructive stack realignmentยอมรับได้.
+20. เสนอ normalized full frameที่เก็บ general registers + RIP/CS/RFLAGS/RSP/SS.
+21. อธิบาย IST/TSSจะช่วย double faultอย่างไร.
+
+## D. Physical Memory / Heap
+
+22. Trace Multiboot memory-map tag parserพร้อม alignment 8 bytes.
+23. อธิบาย `safe_start=max(kernel_end,boot_info_end)`.
+24. ให้ memory regionตัวอย่างแล้วคำนวณ first frameที่ allocatorแจก.
+25. รัน shell `alloc`สองครั้งและยืนยัน addressต่าง 0x1000.
+26. อธิบาย limitation: allocatorใช้ usable rangeแรกและไม่มี free.
+27. แยก PMM vs VMM vs heapด้วยคำถาม “ใครจัดอะไร”.
+
+## E. Runtime / QEMU Evidence
+
+28. รัน `make -C 14-my-os qemu-test`; แนบ serial log.
+29. พิสูจน์ marker order: console → PMM → IDT/PIT config → PIT IRQ → shell ready.
+30. พิสูจน์ serial shell inputจริงด้วย `ticks=` ใน log.
+31. รัน interactive `help,ticks,mem,alloc` และบันทึกผล.
+32. intentionally breakหนึ่ง milestoneใน local copy, ทำนาย first missing marker, แล้วคืน fix.
+33. อธิบายสิ่งที่ QEMU passยังไม่พิสูจน์เกี่ยวกับ hardwareจริง.
+
+## F. Next-step Design
+
+34. เขียน patch series: robust exceptions → bitmap PMM → 4K mapper → TSS → ring3.
+35. ระบุ invariants/testsที่ต้องผ่านหลังแต่ละ patchเพื่อรักษา known-good boot.
+
+## Practical submission
+
+ต้องมี kernel static evidence, QEMU serial runtime evidence, exception-frame drawing, memory allocation calculation และ local patch/testหนึ่งชิ้น.

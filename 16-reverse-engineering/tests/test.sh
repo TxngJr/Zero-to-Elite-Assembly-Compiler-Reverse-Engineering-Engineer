@@ -39,6 +39,9 @@ set -e
 test "$s" -ne 0
 grep -q 'binary-report: error:' "$ROOT/build/not-elf.err"
 
-$PY -m py_compile   "$ROOT/projects/binary-report/binary_report.py"   "$ROOT/projects/cfg-extract/cfg_extract.py"
+# Semantic unit tests verify helper failure handling and CFG edge construction.
+$PY "$ROOT/tests/test_tools.py" -v
 
-echo '[OK] chapter 16 RE tooling validates failures and real CFG blocks'
+$PY -m py_compile   "$ROOT/projects/binary-report/binary_report.py"   "$ROOT/projects/cfg-extract/cfg_extract.py"   "$ROOT/tests/test_tools.py"
+
+echo '[OK] chapter 16 RE tooling validates failures and semantic CFG edges'

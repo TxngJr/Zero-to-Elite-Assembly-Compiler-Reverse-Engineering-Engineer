@@ -52,8 +52,8 @@ void kernel_main(uint32_t magic, uint32_t info) {
     }
     console_write("[BOOT] pit irq ok\n");
 
-    shell_init();
     console_write("[BOOT] shell ready (serial + ps2 input)\n");
+    shell_init();
 
     for (;;) {
         __asm__ volatile("hlt");

@@ -51,6 +51,11 @@ jobs:
       - name: Build and boot EliteOS64
         run: make -C 14-my-os clean qemu-test
 
+      - name: Capstone requires QEMU runtime evidence
+        env:
+          CAPSTONE_REQUIRE_QEMU: "1"
+        run: make -C 18-capstone clean test
+
   defensive-diagnostics:
     name: Defensive diagnostics / sanitizers + libFuzzer
     runs-on: ubuntu-latest

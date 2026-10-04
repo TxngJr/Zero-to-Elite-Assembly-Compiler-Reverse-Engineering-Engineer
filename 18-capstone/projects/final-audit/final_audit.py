@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -183,7 +184,46 @@ def main() -> int:
         output=BUILD / "multiboot.txt",
     )
 
-    # 4. Advanced OS algorithm gates.
+    # 4. Optional runtime OS proof. Static image validation is always required.
+    # Set CAPSTONE_REQUIRE_QEMU=1 to make the runtime gate mandatory.
+    require_qemu = os.environ.get("CAPSTONE_REQUIRE_QEMU", "0") == "1"
+    grub_tool = shutil.which("grub2-mkrescue") or shutil.which("grub-mkrescue")
+    runtime_tools = {
+        "qemu-system-x86_64": shutil.which("qemu-system-x86_64"),
+        "xorriso": shutil.which("xorriso"),
+        "grub-mkrescue": grub_tool,
+    }
+    missing_runtime = [
+        name for name, found in runtime_tools.items() if found is None
+    ]
+
+    if not missing_runtime:
+        gate(
+            "eliteos-qemu-runtime",
+            ["make", "qemu-test"],
+            cwd=ROOT / "14-my-os",
+            output=BUILD / "eliteos-qemu-test.txt",
+        )
+        serial_source = ROOT / "14-my-os" / "build" / "serial.log"
+        serial_copy = BUILD / "qemu-serial.log"
+        shutil.copy2(serial_source, serial_copy)
+        qemu_runtime: dict[str, object] = {
+            "status": "passed",
+            "evidence": str(serial_copy.relative_to(CHAPTER)),
+        }
+    elif require_qemu:
+        raise AuditError(
+            "CAPSTONE_REQUIRE_QEMU=1 but runtime tools are missing: "
+            + ", ".join(missing_runtime)
+        )
+    else:
+        qemu_runtime = {
+            "status": "skipped",
+            "reason": "missing runtime tools",
+            "missing": missing_runtime,
+        }
+
+    # 5. Advanced OS algorithm gates.
     gate(
         "advanced-os",
         ["make", "clean", "test", f"CC={cc}"],
@@ -191,7 +231,7 @@ def main() -> int:
         output=BUILD / "advanced-os.txt",
     )
 
-    # 5. Authorized RE suite + tooling.
+    # 6. Authorized RE suite + tooling.
     gate(
         "reverse-engineering-suite",
         ["make", "clean", "test", f"CC={cc}"],
@@ -199,7 +239,7 @@ def main() -> int:
         output=BUILD / "reverse-engineering.txt",
     )
 
-    # 6. Defensive fixed-code regression/fuzz suite.
+    # 7. Defensive fixed-code regression/fuzz suite.
     gate(
         "security-regression-suite",
         ["make", "clean", "test", f"CC={cc}"],
@@ -221,6 +261,9 @@ def main() -> int:
         BUILD / "reverse-engineering.txt",
         BUILD / "security-lab.txt",
     ]
+    if qemu_runtime["status"] == "passed":
+        artifacts.append(BUILD / "qemu-serial.log")
+
     manifest = write_manifest(artifacts)
 
     git_commit = version(["git", "-C", str(ROOT), "rev-parse", "HEAD"])
@@ -238,9 +281,10 @@ def main() -> int:
             "git_commit": git_commit,
         },
         "steps": steps,
+        "qemu_runtime": qemu_runtime,
         "artifact_count": len(manifest),
         "limitations": [
-            "The capstone build gate does not require QEMU/GRUB.",
+            "QEMU runtime is reported as passed or skipped; set CAPSTONE_REQUIRE_QEMU=1 to make it mandatory.",
             "Chapter 15 scheduler/COW/VFS/IPC projects are host-side algorithm simulators.",
             "EliteC remains an educational compiler with known optimization/allocation limitations.",
             "Security checks are defensive regression/fuzz checks on course-owned code, not a security proof.",

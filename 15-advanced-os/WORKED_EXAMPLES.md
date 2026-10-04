@@ -1,61 +1,108 @@
-# Worked Examples — Advanced OS
+# Worked Examples — Advanced OS Models & Integration Design
 
-ใช้ Predict → Run → Observe → Explain → Modify. อย่าเทียบ exact address/PID/version ถ้าไม่ใช่ invariant.
+Projectsบทนี้เป็น host-side deterministic models. อย่าอ้างว่า integrateเข้า EliteOS64แล้ว.
 
-## Example 1 — Round-robin
+## Example 1 — Round-robin scheduler
 
-**Prediction:** ทำนาย schedule ของ bursts 5,3,4 quantum=2.
+**Goal:** trace task statesและ quantum.
 
-**Action:**
-```text
-run scheduler-sim
+**Command / action:**
+
+```bash
+make -C 15-advanced-os/projects/scheduler-sim clean test
+15-advanced-os/projects/scheduler-sim/scheduler-sim
 ```
 
-**Expected key evidence:** รวม ticks=12 และแต่ละ taskได้ sliceตาม queue.
+**Prediction:** tasks 5/3/4 work unitsกับ quantum 2จบรวม 12 ticksและสลับตาม ready queue.
 
-**What may vary:** address, symbol placement, compiler version, formatting หรือ environment metadata.
+**Expected key evidence:** traceมี slices; final `completed=3 ticks=12`.
 
-**Explain:** เชื่อม output กลับไปยัง contract/algorithm ใน Theory และระบุสิ่งที่ evidence นี้ยังพิสูจน์ไม่ได้.
+**What may vary:** noneใน simulator.
 
-**Modification:** เพิ่ม BLOCKED stateใน local variation.
+**Explain:** READY taskถูกเลือก, RUNNINGใช้ slice, unfinishedกลับ READY, finished→DONE.
 
-**Debug rule:** ถ้าผลผิดจาก prediction ให้หา representation/contract แรกที่ต่าง ไม่แก้หลายจุดพร้อมกัน.
+**Modification:** เปลี่ยน quantum 1และ4แล้วทำนาย sequence; total workต้องยัง 12.
 
-## Example 2 — Copy-on-write
+**Failure mode:** blocked taskไม่ควรอยู่ runnable queueใน real scheduler extension.
 
-**Prediction:** ทำนาย refcountก่อน/หลัง child write.
+**Reflection:** fairness/latency/context-switch overhead trade-offของ quantum.
 
-**Action:**
-```text
-run vm-cow-sim
+---
+
+## Example 2 — fork + Copy-on-Write
+
+**Goal:** เห็น shared frame refcountก่อนและหลัง write.
+
+**Command / action:**
+
+```bash
+python3 15-advanced-os/projects/vm-cow-sim/vm_cow.py
 ```
 
-**Expected key evidence:** หลัง fork shared frame refs=2; child writeสร้าง frameใหม่.
+**Prediction:** หลัง fork parent/childชี้ frameเดียว refcount=2; child writeทำ copyและค่าของ parentไม่เปลี่ยน.
 
-**What may vary:** address, symbol placement, compiler version, formatting หรือ environment metadata.
+**Expected key evidence:** selftestจบ `vm-cow-sim: OK`.
 
-**Explain:** เชื่อม output กลับไปยัง contract/algorithm ใน Theory และระบุสิ่งที่ evidence นี้ยังพิสูจน์ไม่ได้.
+**What may vary:** frame IDsหาก allocatorเปลี่ยน.
 
-**Modification:** อธิบาย page-fault condition ที่ kernelจริงต้องตรวจ.
+**Explain:** mappingsต้อง read-only+COWเพื่อให้ write faultเป็น trigger; refcountป้องกัน free shared frameเร็วเกิน.
 
-**Debug rule:** ถ้าผลผิดจาก prediction ให้หา representation/contract แรกที่ต่าง ไม่แก้หลายจุดพร้อมกัน.
+**Modification:** เพิ่ม second pageแล้วให้ childแก้เพียงหน้าเดียว.
 
-## Example 3 — Pipe + VFS
+**Failure mode:** mark COWแต่ยัง writableจะไม่มี faultให้ kernel intercept.
 
-**Prediction:** trace circular buffer wrap และ /etc/motd path components.
+**Reflection:** real kernelต้องทำอะไรเพิ่ม: page-fault handler, physical copy, PTE update, TLB invalidation.
 
-**Action:**
-```text
-run ipc-sim และ vfs-sim
+---
+
+## Example 3 — Bounded pipe wrap-around
+
+**Goal:** เข้าใจ ring bufferก่อนผูกกับ scheduler blocking.
+
+**Command / action:**
+
+```bash
+make -C 15-advanced-os/projects/ipc-sim clean test
+15-advanced-os/projects/ipc-sim/ipc-sim
 ```
 
-**Expected key evidence:** count/head/tail และ directory traversalตรง invariant.
+**Prediction:** capacity 8; write 9 bytesรับได้ 8; read 3แล้วเขียนเพิ่ม 3ต้อง wrap tailและรักษาลำดับ bytes.
 
-**What may vary:** address, symbol placement, compiler version, formatting หรือ environment metadata.
+**Expected key evidence:** final `ipc-sim: OK`.
 
-**Explain:** เชื่อม output กลับไปยัง contract/algorithm ใน Theory และระบุสิ่งที่ evidence นี้ยังพิสูจน์ไม่ได้.
+**What may vary:** none.
 
-**Modification:** เพิ่ม nested directoryหรือ wrap-around case.
+**Explain:** head/tail/countเป็น buffer state; “full/empty” policyแยกจาก schedulerว่าจะ blockหรือ partial return.
 
-**Debug rule:** ถ้าผลผิดจาก prediction ให้หา representation/contract แรกที่ต่าง ไม่แก้หลายจุดพร้อมกัน.
+**Modification:** เพิ่ม test empty readและmultiple wraps.
 
+**Failure mode:** ใช้ head==tailอย่างเดียวแยก full/emptyไม่ได้ถ้าไม่มี count/extra state.
+
+**Reflection:** real blocking pipeต้องมี wait queue/wakeupที่ไหน?
+
+---
+
+## Example 4 — VFS path lookup
+
+**Goal:** แยก path traversal, inode-like node และ open-file state.
+
+**Command / action:**
+
+```bash
+make -C 15-advanced-os/projects/vfs-sim clean test
+15-advanced-os/projects/vfs-sim/vfs-sim
+```
+
+**Prediction:** `/etc/motd` traverse root→etc→motd; missing pathคืน NULL/error.
+
+**Expected key evidence:** content `Welcome to EliteOS` และ testผ่าน.
+
+**What may vary:** none.
+
+**Explain:** current simulatorเป็น tree lookup; real VFSต้องเพิ่ม mounts, symlinks, permissions, races, open offsets.
+
+**Modification:** เพิ่ม nested directoryและfileใหม่พร้อม negative lookup.
+
+**Failure mode:** inode/node metadataกับ open descriptor offsetไม่ควรเป็น objectเดียวกัน.
+
+**Reflection:** เขียน integration orderถ้าจะย้าย VFS modelเข้า kernelหลัง processes/syscalls.

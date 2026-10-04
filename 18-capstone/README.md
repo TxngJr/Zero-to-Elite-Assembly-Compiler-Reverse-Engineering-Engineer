@@ -34,6 +34,8 @@ binary-report + CFG extraction
    ↓
 EliteOS64 kernel build + Multiboot2 validation
    ↓
+QEMU runtime gate when tools exist (or mandatory with CAPSTONE_REQUIRE_QEMU=1)
+   ↓
 Advanced OS simulator tests
    ↓
 Reverse Engineering course-suite tests
@@ -61,8 +63,15 @@ Artifacts are written to:
 ├── binary-report.json
 ├── cfg.txt
 ├── eliteos64-kernel.elf
+├── qemu-serial.log          # only when runtime gate runs
 ├── manifest.json
 └── audit-summary.json
+```
+
+By default, if QEMU/GRUB/xorriso are unavailable, `audit-summary.json` records `qemu_runtime.status = skipped` with the missing tools. To require runtime proof:
+
+```bash
+CAPSTONE_REQUIRE_QEMU=1 make clean test
 ```
 
 ## Navigation

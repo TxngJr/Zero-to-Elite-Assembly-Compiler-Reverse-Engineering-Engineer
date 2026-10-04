@@ -1,70 +1,134 @@
 # Worked Examples — x86-64 Assembly
 
-ใช้ตัวอย่างเหล่านี้แบบ **Predict → Run → Observe → Explain → Modify**. Output ที่เป็น address/PID/version อาจต่างได้; ให้เทียบ key evidence ไม่ใช่เลข exact.
+เน้น bytes/registers/flags/effective addressด้วย evidenceจาก assemblerและ GDB.
 
-## Example 1 — EAX zero-extension
+## Example 1 — 32-bit register write zero-extends
 
-**Goal:** EAX zero-extension
-
-**Prediction:** ทำนาย RAX หลังเขียน EAX
+**Goal:** เข้าใจ RAX/EAX/AX/AL semantics.
 
 **Command / action:**
 
-```text
-mov rax,-1; mov eax,5
+```bash
+cat >/tmp/regwrite.s <<'EOF'
+.intel_syntax noprefix
+.global main
+main:
+    mov rax, -1
+    mov eax, 5
+    ret
+EOF
+
+gcc -g -no-pie /tmp/regwrite.s -o /tmp/regwrite
+gdb -q /tmp/regwrite
 ```
 
-**Expected key evidence:** RAX = 5 เพราะ write 32-bit zeroes upper half.
+ใน GDB:
 
-**What may vary:** addresses, tool version, symbol addresses, formatting หรือ environment-specific metadata ที่ไม่ใช่ semantic invariant.
+```text
+break main
+run
+si
+si
+info registers rax eax
+quit
+```
 
-**Explain:** เขียนเหตุผลเชื่อม observation กลับไปยัง contract/mental model ใน Theory.
+**Prediction:** หลัง `mov eax,5`, RAX = `0x0000000000000005`.
 
-**Modification:** เปลี่ยน eax เป็น ax แล้วอธิบาย upper bits.
+**Expected key evidence:** upper 32 bitsถูก zeroโดย architecture rule.
 
-**Reflection:** ถ้าผลไม่ตรง prediction ให้บันทึกว่า prediction ผิดเพราะ concept ไหน—not แค่แก้จน output ตรง.
+**What may vary:** instruction addresses.
 
-## Example 2 — Signed vs unsigned branch
+**Explain:** write EAXมี special zero-extension; write AX/ALไม่ zero upper bits.
 
-**Goal:** Signed vs unsigned branch
+**Modification:** เปลี่ยน `mov eax,5` เป็น `mov ax,5` แล้วทำนาย RAX.
 
-**Prediction:** ใช้ค่า bit pattern เดียวแล้วเปรียบเทียบ jl กับ jb
+**Failure mode:** อย่าเหมารวม partial-register semanticsทุก width.
+
+**Reflection:** ทำไม compilerชอบ `xor eax,eax`/32-bit writesเมื่อสร้าง zero?
+
+---
+
+## Example 2 — Effective address vs memory load
+
+**Goal:** แยก LEAจาก dereference.
 
 **Command / action:**
 
-```text
-cmp operands แล้ว inspect flags/GDB
+```bash
+gcc -c 03-x86-64-assembly/examples/addressing.s \
+  -o /tmp/addressing.o
+objdump -dr -Mintel /tmp/addressing.o
 ```
 
-**Expected key evidence:** CF/OF/SF/ZF ถูกตีความต่างกันตาม jcc.
+**Prediction:** `lea rax,[rdi+rdi*2]` คำนวณ `3*rdi` โดยไม่อ่าน memory.
 
-**What may vary:** addresses, tool version, symbol addresses, formatting หรือ environment-specific metadata ที่ไม่ใช่ semantic invariant.
+**Expected key evidence:** LEA operand syntaxดูเหมือน memory addressingแต่ instructionไม่ load bytesจาก addressนั้น.
 
-**Explain:** เขียนเหตุผลเชื่อม observation กลับไปยัง contract/mental model ใน Theory.
+**What may vary:** assembler encoding/address offsets.
 
-**Modification:** สร้าง input ที่ signed negative แต่ unsigned large.
+**Explain:** effective address formula = base + index*scale + displacement; scaleเป็น 1/2/4/8.
 
-**Reflection:** ถ้าผลไม่ตรง prediction ให้บันทึกว่า prediction ผิดเพราะ concept ไหน—not แค่แก้จน output ตรง.
+**Modification:** คำนวณ `[rax+rcx*8+16]` เมื่อ RAX=0x1000, RCX=3 → 0x1028.
 
-## Example 3 — Array loop
+**Failure mode:** อย่าใส่ arbitrary scaleเช่น 3ใน x86 addressing encoding.
 
-**Goal:** Array loop
+**Reflection:** array int32/int64ควรใช้ scaleใด?
 
-**Prediction:** ตาม index/address/accumulator ทีละ iteration
+---
+
+## Example 3 — CMP/Jcc signed vs unsigned
+
+**Goal:** เห็น flagsเดียวกันตีความต่างตาม Jcc.
 
 **Command / action:**
 
-```text
-GDB si + info registers + x/
+```bash
+gcc -c 03-x86-64-assembly/examples/branches.s -o /tmp/branches.o
+objdump -dr -Mintel /tmp/branches.o
 ```
 
-**Expected key evidence:** scale ต้องตรง element width.
+**Prediction:** signed relationใช้ `jl/jle/jg/jge`; unsignedใช้ `jb/jbe/ja/jae`.
 
-**What may vary:** addresses, tool version, symbol addresses, formatting หรือ environment-specific metadata ที่ไม่ใช่ semantic invariant.
+**Expected key evidence:** `cmp`ไม่เก็บ subtraction resultแต่ update flags; branchเลือก conditionจาก flags.
 
-**Explain:** เขียนเหตุผลเชื่อม observation กลับไปยัง contract/mental model ใน Theory.
+**What may vary:** labels/address.
 
-**Modification:** เปลี่ยน int32 เป็น int64 แล้วแก้ addressing scale.
+**Explain:** CFเกี่ยวกับ unsigned borrow/carry; SF/OF relationเกี่ยวกับ signed comparison.
 
-**Reflection:** ถ้าผลไม่ตรง prediction ให้บันทึกว่า prediction ผิดเพราะ concept ไหน—not แค่แก้จน output ตรง.
+**Modification:** เลือก bytes `0xFF`กับ `0x01`; ตีความ signed/unsignedแล้วทำนาย branchสองแบบ.
 
+**Failure mode:** ใช้ `jl`กับ unsigned lengthอาจผิดกรณี high bit set.
+
+**Reflection:** เขียน bugตัวอย่างที่ signednessผิดแล้วสร้าง security/logic issueได้โดยไม่ต้อง exploit.
+
+---
+
+## Example 4 — Assembly + C ABI project
+
+**Goal:** เชื่อม hand-written assemblyกับ C test harness.
+
+**Command / action:**
+
+```bash
+make -C 03-x86-64-assembly/projects/array-kernels clean test
+objdump -d -Mintel \
+  03-x86-64-assembly/projects/array-kernels/array-kernels \
+  | less
+```
+
+ถ้า binaryชื่อแตกต่าง ให้ดู Makefileแล้ว inspect artifactที่สร้าง.
+
+**Prediction:** function argsมาตาม SysV ABIและ loopใช้ element strideตรงชนิดข้อมูล.
+
+**Expected key evidence:** C testsยืนยัน semantics; disassemblyยืนยัน register/memory pattern.
+
+**What may vary:** link addresses.
+
+**Explain:** test behaviorกับ disassembly evidenceต้องใช้คู่กัน.
+
+**Modification:** เพิ่ม empty array / one-element caseใน local tests.
+
+**Failure mode:** assembly linkได้ไม่ได้แปลว่า ABIถูก.
+
+**Reflection:** ก่อน reverse functionหนึ่งตัว ให้เขียน checklist register args, return, stack, memory width, signedness, calls, branches.

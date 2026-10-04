@@ -1,70 +1,113 @@
 # Worked Examples — Computer Architecture
 
-ใช้ตัวอย่างเหล่านี้แบบ **Predict → Run → Observe → Explain → Modify**. Output ที่เป็น address/PID/version อาจต่างได้; ให้เทียบ key evidence ไม่ใช่เลข exact.
+Labsบทนี้สร้าง modelที่วัดได้ ไม่อ้างว่า simulatorเท่ากับ CPUจริง.
 
-## Example 1 — Direct-mapped cache
+## Example 1 — Spatial locality
 
-**Goal:** Direct-mapped cache
-
-**Prediction:** คำนวณ tag/index/offset ด้วยมือ
+**Goal:** เชื่อม access patternกับ cache behavior.
 
 **Command / action:**
 
-```text
-run cache-sim กับ address sequence
+```bash
+gcc -O2 -std=c17 -Wall -Wextra -Wpedantic \
+  05-computer-architecture/examples/locality.c \
+  -o /tmp/locality
+/tmp/locality
 ```
 
-**Expected key evidence:** hit/miss ต้องตรง mapping model.
+**Prediction:** sequential traversalมัก cache-friendlyกว่า large-stride/random pattern.
 
-**What may vary:** addresses, tool version, symbol addresses, formatting หรือ environment-specific metadata ที่ไม่ใช่ semantic invariant.
+**Expected key evidence:** timing/operation patternสะท้อน locality แต่ absolute timeไม่ใช่ invariant.
 
-**Explain:** เขียนเหตุผลเชื่อม observation กลับไปยัง contract/mental model ใน Theory.
+**What may vary:** CPU, cache size, scheduler, turbo, VM noise.
 
-**Modification:** เปลี่ยน line size แล้วทำนายใหม่.
+**Explain:** cache lineดึง bytesเป็นกลุ่ม; spatial localityใช้ bytesใกล้กันก่อน eviction.
 
-**Reflection:** ถ้าผลไม่ตรง prediction ให้บันทึกว่า prediction ผิดเพราะ concept ไหน—not แค่แก้จน output ตรง.
+**Modification:** เปลี่ยน stride 1/4/16/64และ plot/จดเวลาแบบหลายรอบ.
 
-## Example 2 — 2-bit branch predictor
+**Failure mode:** benchmarkครั้งเดียวพิสูจน์ microarchitectureไม่ได้.
 
-**Goal:** 2-bit branch predictor
+**Reflection:** แยก cache capacity, line size, associativity effects.
 
-**Prediction:** ตาม state transitions ของ branch pattern
+---
+
+## Example 2 — Direct-mapped cache simulator
+
+**Goal:** เห็น tag/index/offsetและ conflict miss.
 
 **Command / action:**
 
-```text
-run branch-predictor
+```bash
+make -C 05-computer-architecture/projects/cache-sim clean test
+05-computer-architecture/projects/cache-sim/cache-sim
 ```
 
-**Expected key evidence:** state saturates และ prediction เปลี่ยนตาม counter.
+ถ้า binaryชื่อแตกต่าง ให้ดู Makefile.
 
-**What may vary:** addresses, tool version, symbol addresses, formatting หรือ environment-specific metadata ที่ไม่ใช่ semantic invariant.
+**Prediction:** addressesที่ map indexเดียวแต่ tagต่างจะ evictกันใน direct-mapped model.
 
-**Explain:** เขียนเหตุผลเชื่อม observation กลับไปยัง contract/mental model ใน Theory.
+**Expected key evidence:** hit/miss countersเปลี่ยนตาม sequenceที่กำหนด.
 
-**Modification:** ทดลอง TTTNT pattern.
+**What may vary:** noneถ้า simulator deterministic.
 
-**Reflection:** ถ้าผลไม่ตรง prediction ให้บันทึกว่า prediction ผิดเพราะ concept ไหน—not แค่แก้จน output ตรง.
+**Explain:** address splitเป็น block offset + set/index + tagตาม model parameters.
 
-## Example 3 — Tiny CPU
+**Modification:** สร้าง sequence A,B,A ที่ A/B conflict indexเดียวแล้วทำนาย misses.
 
-**Goal:** Tiny CPU
+**Failure mode:** อย่าเอา simulator direct-mappedไปอ้างว่า L1 ของ CPUคุณมี designเดียวกัน.
 
-**Prediction:** trace fetch/decode/execute state
+**Reflection:** set associativityช่วย conflictอย่างไร?
+
+---
+
+## Example 3 — Branch predictor simulator
+
+**Goal:** เข้าใจ predictor stateโดยไม่พึ่ง perf countersก่อน.
 
 **Command / action:**
 
-```text
-run tiny-cpu with short program
+```bash
+make -C 05-computer-architecture/projects/branch-predictor clean test
+05-computer-architecture/projects/branch-predictor/branch-predictor
 ```
 
-**Expected key evidence:** PC/register/memory เปลี่ยนตาม instruction semantics.
+**Prediction:** repeating patternกับ alternating patternให้ accuracyต่างตาม predictor algorithm.
 
-**What may vary:** addresses, tool version, symbol addresses, formatting หรือ environment-specific metadata ที่ไม่ใช่ semantic invariant.
+**Expected key evidence:** deterministic prediction/misprediction counts.
 
-**Explain:** เขียนเหตุผลเชื่อม observation กลับไปยัง contract/mental model ใน Theory.
+**What may vary:** noneใน simulator; real hardwareซับซ้อนกว่ามาก.
 
-**Modification:** เพิ่ม instruction หนึ่งแบบแล้วเขียน test.
+**Explain:** mispredictionทำให้ speculative workถูก squashและ frontendต้อง redirect.
 
-**Reflection:** ถ้าผลไม่ตรง prediction ให้บันทึกว่า prediction ผิดเพราะ concept ไหน—not แค่แก้จน output ตรง.
+**Modification:** feed pattern `TTTTNNNN`, `TNTN...`, loop-like `TTTTTTTN`.
 
+**Failure mode:** simulator simple predictorไม่ใช่ reverse-engineered predictorของ CPUจริง.
+
+**Reflection:** ทำไม branchless codeไม่ได้เร็วกว่าเสมอ?
+
+---
+
+## Example 4 — Tiny CPU fetch/decode/execute
+
+**Goal:** เชื่อม ISA stateกับ execution loop.
+
+**Command / action:**
+
+```bash
+make -C 05-computer-architecture/projects/tiny-cpu clean test
+05-computer-architecture/projects/tiny-cpu/tiny-cpu
+```
+
+**Prediction:** trace PC/registersทีละ instructionก่อนดู output.
+
+**Expected key evidence:** PCเลือก instructionถัดไป, decodeเลือก operation, executeเปลี่ยน architectural state.
+
+**What may vary:** trace formatting.
+
+**Explain:** simulatorเป็น architectural model; real CPUอาจ pipeline/out-of-orderแต่ต้อง retireผลให้สอดคล้อง ISA.
+
+**Modification:** เพิ่ม programเล็กที่ loop 3 รอบโดยไม่เพิ่ม opcodeใหม่.
+
+**Failure mode:** อย่าเอา fetch→decode→executeเป็น timing modelจริงของ modern CPU.
+
+**Reflection:** ISA vs microarchitectureต่างกันอย่างไร?

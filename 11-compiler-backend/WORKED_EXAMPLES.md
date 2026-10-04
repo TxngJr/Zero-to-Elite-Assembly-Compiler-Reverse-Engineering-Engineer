@@ -1,61 +1,129 @@
 # Worked Examples — Compiler Backend
 
-ใช้ Predict → Run → Observe → Explain → Modify. อย่าเทียบ exact address/PID/version ถ้าไม่ใช่ invariant.
+ตัวอย่างนี้ให้ inspect assemblyจริงและเทียบกับ System V AMD64 ABI.
 
-## Example 1 — Stack-slot frame
+## Example 1 — Stack-slot frame และ alignment
 
-**Prediction:** นับ virtual values แล้วทำนาย frame size/alignment.
+**Goal:** อธิบายว่า baseline backend map virtual valuesลง stackอย่างไร.
 
-**Action:**
-```text
-emit asm ของ simple function
+**Command / action:**
+
+```bash
+mkdir -p 11-compiler-backend/build
+python3 11-compiler-backend/projects/elite-backend/elite_backend.py \
+  11-compiler-backend/examples/return42.el \
+  -o 11-compiler-backend/build/return42.s
+
+sed -n '1,120p' 11-compiler-backend/build/return42.s
 ```
 
-**Expected key evidence:** prologue push rbp/mov rbp,rsp และ frame rounded เป็น 16-byte multiple.
+**Prediction:** ต้องเห็น `push rbp`, `mov rbp,rsp`; frame allocationถ้ามีต้อง roundเป็น multiple of 16.
 
-**What may vary:** address, symbol placement, compiler version, formatting หรือ environment metadata.
+**Expected key evidence:** prologue/epilogueสมดุล และทุก stack-slot accessอยู่ที่ `[rbp-offset]`.
 
-**Explain:** เชื่อม output กลับไปยัง contract/algorithm ใน Theory และระบุสิ่งที่ evidence นี้ยังพิสูจน์ไม่ได้.
+**What may vary:** จำนวน/temp slotsตาม IR generation.
 
-**Modification:** เพิ่ม locals แล้วดู frame size.
+**Explain:** SysV callerต้องมี stack alignmentที่ถูกก่อน `call`; backendใช้ frameขนาด multiple 16หลัง `push rbp`.
 
-**Debug rule:** ถ้าผลผิดจาก prediction ให้หา representation/contract แรกที่ต่าง ไม่แก้หลายจุดพร้อมกัน.
+**Modification:** เพิ่ม localsหลายตัวใน local sourceแล้วดู frame sizeเปลี่ยน.
 
-## Example 2 — Eight-argument call
+**Failure mode:** อย่าสรุป frameถูกเพียงเพราะ assemblerรับ; runtime calls/stack argsต้องมี testsด้วย.
 
-**Prediction:** ทำนาย register/stack placement.
+**Reflection:** spill-everything correctแต่เสีย performanceอย่างไร?
 
-**Action:**
-```text
-emit asm sum8
+---
+
+## Example 2 — 8 arguments: registers + stack
+
+**Goal:** พิสูจน์ boundaryของ first-six integer arguments.
+
+**Command / action:**
+
+```bash
+python3 12-my-compiler/projects/elitec/elitec.py \
+  --emit asm 12-my-compiler/examples/sum8.el \
+  > 11-compiler-backend/build/sum8.s
+
+grep -n -E 'call|push|rdi|rsi|rdx|rcx|r8|r9|\[rbp\+' \
+  11-compiler-backend/build/sum8.s
 ```
 
-**Expected key evidence:** args 1–6 ไป register; 7–8 ถูก push และ cleanup หลัง call.
+**Prediction:**
+- args 1–6: RDI, RSI, RDX, RCX, R8, R9
+- args 7–8: caller stack
+- calleeอ่าน stack argsหลัง saved RBP/return address
 
-**What may vary:** address, symbol placement, compiler version, formatting หรือ environment metadata.
+**Expected key evidence:** caller push stack arguments in reverse order; calleeใช้ positive `rbp` offsets; cleanupเกิดหลัง call.
 
-**Explain:** เชื่อม output กลับไปยัง contract/algorithm ใน Theory และระบุสิ่งที่ evidence นี้ยังพิสูจน์ไม่ได้.
+**What may vary:** temp loads/stack slotsรอบ argument setup.
 
-**Modification:** เปลี่ยนเป็น 7/9 args แล้วตรวจ padding.
+**Explain:** stack alignmentต้องยังถูกเมื่อจำนวน stack argsเป็น odd; baseline backendจึงอาจเพิ่ม padding 8 bytes.
 
-**Debug rule:** ถ้าผลผิดจาก prediction ให้หา representation/contract แรกที่ต่าง ไม่แก้หลายจุดพร้อมกัน.
+**Modification:** สร้าง 7-argและ9-arg functionแล้วตรวจ padding.
 
-## Example 3 — Signed division
+**Failure mode:** โปรแกรม 6 argsผ่านไม่ได้พิสูจน์ stack-argument path.
 
-**Prediction:** ทำนาย cqo/idiv state.
+**Reflection:** วาด stackก่อน call, หลัง call, หลัง callee `push rbp`.
 
-**Action:**
-```text
-emit asm ของ / และ %
+---
+
+## Example 3 — Signed division / remainder
+
+**Goal:** ผูก language semanticsกับ x86 `idiv`.
+
+**Command / action:**
+
+```bash
+cat > 11-compiler-backend/build/div.el <<'EOF'
+fn main() -> int {
+  if (((-7 / 3) == -2) && ((-7 % 3) == -1)) {
+    return 0;
+  } else {
+    return 1;
+  }
+}
+EOF
+
+python3 12-my-compiler/projects/elitec/elitec.py \
+  --emit asm 11-compiler-backend/build/div.el \
+  > 11-compiler-backend/build/div.s
+
+grep -n -E 'cqo|idiv|rdx|rax' 11-compiler-backend/build/div.s
 ```
 
-**Expected key evidence:** division ใช้ RDX:RAX และ remainder อยู่ RDX.
+**Expected key evidence:** signed division pathใช้ `cqo`ก่อน `idiv`; quotientอยู่ RAX, remainderอยู่ RDX.
 
-**What may vary:** address, symbol placement, compiler version, formatting หรือ environment metadata.
+**What may vary:** stack-slot offsets.
 
-**Explain:** เชื่อม output กลับไปยัง contract/algorithm ใน Theory และระบุสิ่งที่ evidence นี้ยังพิสูจน์ไม่ได้.
+**Explain:** `cqo` sign-extends RAX into RDX:RAX. EliteLang quotient truncates toward zeroตรงกับ `idiv`.
 
-**Modification:** ใช้ negative operandsแล้วเทียบกับ language spec.
+**Modification:** ลอง divisor 0ใน isolated processและอธิบายว่าทำไม optimizerห้าม fold trapออก.
 
-**Debug rule:** ถ้าผลผิดจาก prediction ให้หา representation/contract แรกที่ต่าง ไม่แก้หลายจุดพร้อมกัน.
+**Failure mode:** อย่ารัน trap caseเป็นส่วนของ shell scriptภายใต้ `set -e` โดยไม่ isolate/จับ status.
 
+**Reflection:** `INT64_MIN / -1` มีอะไรพิเศษ?
+
+---
+
+## Example 4 — Linear-scan allocation lab
+
+**Goal:** แยก “allocator algorithm lab” ออกจาก baseline codegenที่ยัง spillทุก value.
+
+**Command / action:**
+
+```bash
+python3 11-compiler-backend/tests/test_linear_scan.py -v
+python3 11-compiler-backend/projects/linear-scan/linear_scan.py
+```
+
+**Expected key evidence:** non-overlapping intervals reuse register; overlapping intervalsแยก register; pressureทำให้มี spill.
+
+**What may vary:** register namesถ้า input poolเปลี่ยน.
+
+**Explain:** interval start/endมาจาก liveness approximation; linear scanเลือก registerด้วย active intervalsและ spill policy.
+
+**Modification:** เปลี่ยน register poolเหลือหนึ่งตัวและทำนายว่า intervalใด spill.
+
+**Failure mode:** การมี allocator labไม่ได้หมายความว่า EliteC production backendใช้ allocatorแล้ว.
+
+**Reflection:** ระบุขั้น integrationที่ต้องทำเพื่อให้ codegen consume allocation resultจริง.

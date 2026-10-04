@@ -1,61 +1,162 @@
-# Worked Examples — My Compiler — EliteC
+# Worked Examples — My Compiler: EliteC
 
-ใช้ Predict → Run → Observe → Explain → Modify. อย่าเทียบ exact address/PID/version ถ้าไม่ใช่ invariant.
+## Example 1 — One source through every compiler phase
 
-## Example 1 — Intermediate emits
+**Goal:** ใช้ driverเดียวดู representationทุกชั้น.
 
-**Prediction:** ทำนาย representation ของ tokens/AST/IR/asm.
+**Command / action:**
 
-**Action:**
-```text
-elitec --emit tokens|ast|ir|asm example.el
+```bash
+mkdir -p 12-my-compiler/build
+
+python3 12-my-compiler/projects/elitec/elitec.py \
+  --emit tokens 12-my-compiler/examples/factorial.el \
+  > 12-my-compiler/build/factorial.tokens
+
+python3 12-my-compiler/projects/elitec/elitec.py \
+  --emit ast 12-my-compiler/examples/factorial.el \
+  > 12-my-compiler/build/factorial.ast.json
+
+python3 12-my-compiler/projects/elitec/elitec.py \
+  --emit ir 12-my-compiler/examples/factorial.el \
+  > 12-my-compiler/build/factorial.ir
+
+python3 12-my-compiler/projects/elitec/elitec.py \
+  --emit asm 12-my-compiler/examples/factorial.el \
+  > 12-my-compiler/build/factorial.s
+
+python3 12-my-compiler/projects/elitec/elitec.py \
+  12-my-compiler/examples/factorial.el \
+  -o 12-my-compiler/build/factorial
+
+file 12-my-compiler/build/factorial
 ```
 
-**Expected key evidence:** แต่ละ mode หยุดที่ phase boundary ต่างกัน.
+**Prediction:** tokensรักษา lexical units; ASTรักษา source structure; IRเผย CFG/temps; assemblyเป็น target-specific; ELFเพิ่ม link/load metadata.
 
-**What may vary:** address, symbol placement, compiler version, formatting หรือ environment metadata.
+**Expected key evidence:** artifactทุกชั้นnon-emptyและ executableรัน status 0สำหรับ factorial regression.
 
-**Explain:** เชื่อม output กลับไปยัง contract/algorithm ใน Theory และระบุสิ่งที่ evidence นี้ยังพิสูจน์ไม่ได้.
+**What may vary:** assembly temp/stack layoutและ ELF addresses.
 
-**Modification:** สร้าง source errorแล้วดูว่า phase ไหน reject.
+**Explain:** phase boundaryที่ชัดทำให้ debugหา representationแรกที่ผิดได้.
 
-**Debug rule:** ถ้าผลผิดจาก prediction ให้หา representation/contract แรกที่ต่าง ไม่แก้หลายจุดพร้อมกัน.
+**Modification:** เปลี่ยน base case factorialแล้วตามผลต่างทุก representation.
 
-## Example 2 — Optimized vs unoptimized
+**Failure mode:** อย่า debug backendก่อนยืนยัน AST/IRถูก.
 
-**Prediction:** ทำนายว่าผล executable ต้องเหมือนกัน.
+**Reflection:** แต่ละ phaseทำข้อมูลอะไร “หาย” และเพิ่มอะไร?
 
-**Action:**
-```text
-compile large_div.el ทั้ง --opt และ no-opt
+---
+
+## Example 2 — Optimized vs unoptimized equivalence
+
+**Goal:** พิสูจน์ optimizationไม่เปลี่ยน supported semantics.
+
+**Command / action:**
+
+```bash
+python3 12-my-compiler/projects/elitec/elitec.py \
+  12-my-compiler/examples/large_div.el \
+  -o 12-my-compiler/build/large-div-O0
+
+python3 12-my-compiler/projects/elitec/elitec.py \
+  --opt 12-my-compiler/examples/large_div.el \
+  -o 12-my-compiler/build/large-div-opt
+
+set +e
+12-my-compiler/build/large-div-O0
+a=$?
+12-my-compiler/build/large-div-opt
+b=$?
+set -e
+printf 'unoptimized=%d optimized=%d\n' "$a" "$b"
+test "$a" -eq "$b"
 ```
 
-**Expected key evidence:** ทั้งคู่ exit 0; IR อาจต่างแต่ semantics ต้องตรง.
+**Prediction:** statusesต้องตรง.
 
-**What may vary:** address, symbol placement, compiler version, formatting หรือ environment metadata.
+**Expected key evidence:** large signed division regressionไม่ต่างเพราะ optimizerใช้ integer-only folding.
 
-**Explain:** เชื่อม output กลับไปยัง contract/algorithm ใน Theory และระบุสิ่งที่ evidence นี้ยังพิสูจน์ไม่ได้.
+**What may vary:** emitted assembly.
 
-**Modification:** เพิ่ม boundary arithmetic case.
+**Explain:** optimizerต้อง preserve wrap/trap/division semanticsใน `LANGUAGE_SPEC.md`.
 
-**Debug rule:** ถ้าผลผิดจาก prediction ให้หา representation/contract แรกที่ต่าง ไม่แก้หลายจุดพร้อมกัน.
+**Modification:** เพิ่ม negative division/remainder tests.
 
-## Example 3 — Run status separation
+**Failure mode:** output assembly “สั้นกว่า”ไม่ได้ทำ optimizerถูก.
 
-**Prediction:** ทำนาย elitec status เมื่อโปรแกรม return 42.
+**Reflection:** differential testingช่วยจับ compiler bugชนิดใด?
 
-**Action:**
-```text
-elitec --run return42.el
+---
+
+## Example 3 — Driver status vs program status
+
+**Goal:** แยก compiler successจาก compiled program exit code.
+
+**Command / action:**
+
+```bash
+python3 12-my-compiler/projects/elitec/elitec.py \
+  --run 12-my-compiler/examples/return42.el \
+  -o 12-my-compiler/build/return42
+printf 'elitec status=%d\n' "$?"
+
+set +e
+python3 12-my-compiler/projects/elitec/elitec.py \
+  --run --propagate-exit-code \
+  12-my-compiler/examples/return42.el \
+  -o 12-my-compiler/build/return42
+status=$?
+set -e
+printf 'propagated status=%d\n' "$status"
 ```
 
-**Expected key evidence:** driver รายงาน program status 42 แต่ตัว compiler commandสำเร็จ; --propagate-exit-code จึงค่อยคืน 42.
+**Prediction:** normal `--run` report program status 42แต่ compiler commandคืน 0; explicit propagateคืน 42.
 
-**What may vary:** address, symbol placement, compiler version, formatting หรือ environment metadata.
+**Expected key evidence:** compiler failureกับ program statusไม่ปนกันโดย default.
 
-**Explain:** เชื่อม output กลับไปยัง contract/algorithm ใน Theory และระบุสิ่งที่ evidence นี้ยังพิสูจน์ไม่ได้.
+**What may vary:** executable path.
 
-**Modification:** อธิบายว่าทำไม CI ต้องแยกสอง status.
+**Explain:** CI/toolchainควรแยก “compile failed” จาก “program intentionally returned nonzero”.
 
-**Debug rule:** ถ้าผลผิดจาก prediction ให้หา representation/contract แรกที่ต่าง ไม่แก้หลายจุดพร้อมกัน.
+**Modification:** ลอง syntax/type errorและยืนยัน status 1 + diagnostic.
 
+**Failure mode:** shell `set -e`จะหยุดเมื่อใช้ propagateกับ nonzero program;จับ statusอย่างตั้งใจ.
+
+**Reflection:** CLI contractที่ดีช่วย scriptingอย่างไร?
+
+---
+
+## Example 4 — Invalid entry point / literal range
+
+**Goal:** พิสูจน์ driverเคารพ language specก่อนถึง assembler.
+
+**Command / action:**
+
+```bash
+for src in \
+  12-my-compiler/examples/bad_main_args.el \
+  12-my-compiler/examples/bad_main_return.el \
+  12-my-compiler/examples/literal_overflow.el
+do
+  echo "=== $src ==="
+  set +e
+  python3 12-my-compiler/projects/elitec/elitec.py --check "$src"
+  status=$?
+  set -e
+  echo "status=$status"
+  test "$status" -ne 0
+done
+```
+
+**Expected key evidence:** errorsเกิดเป็น source diagnostics ไม่มี Python traceback.
+
+**What may vary:** exact wording.
+
+**Explain:** frontendต้อง reject values/signaturesที่ backend/runtimeไม่มี contractรองรับ.
+
+**Modification:** เพิ่ม negative cases wrong arity/unknown variable.
+
+**Failure mode:** assembler/linker errorช้าเกินไปถ้า frontendรู้ violationอยู่แล้ว.
+
+**Reflection:** เขียน checklistเมื่อต้องเพิ่ม featureภาษาใหม่หนึ่ง feature.
