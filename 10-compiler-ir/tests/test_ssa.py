@@ -46,7 +46,7 @@ class SSATests(unittest.TestCase):
         text = S.format_ssa(fn)
         self.assertIn("while_cond", text)
         self.assertRegex(text, r"i\.\d+ = phi ")
-        self.assertNotRegex(text, r"\bret i\b")
+        self.assertNotRegex(text, r"(?m)^\s*ret i\s*$")
 
     def test_immediate_dominators_diamond(self):
         fn = I.FunctionIR(
