@@ -1,8 +1,8 @@
 # Zero to Elite Assembly, Compiler & Reverse Engineering Engineer
 
-หลักสูตร Systems Engineering แบบลงมือทำบน Fedora/x86-64 ตั้งแต่พื้นฐานคอมพิวเตอร์และ C ไปจนถึง Assembly, ABI, ELF, Compiler, Operating Systems, Reverse Engineering และ Defensive Security Research.
+หลักสูตร systems engineering แบบลงมือทำบน Linux/x86-64 ตั้งแต่ computer foundations → C/Assembly/ABI → ELF/debugging → compiler → educational kernel → authorized reverse engineering → defensive security.
 
-**Chapters 00–18 implemented.**
+> ชื่อ repository สื่อถึงเส้นทางระยะยาว. Repository นี้เป็น **educational implementation**, ไม่ใช่คำกล่าวว่า compiler/kernel/security tooling production-ready หรือว่าผู้เรียน “elite” เพียงเพราะ tests ผ่าน.
 
 ## Learning loop
 
@@ -10,7 +10,23 @@
 Predict → Build → Run → Observe → Inspect → Debug → Modify → Explain
 ```
 
-## Full Roadmap
+## Quality rules
+
+อ่านก่อนเริ่ม:
+- [Study Guide](STUDY_GUIDE.md)
+- [Assessment Policy](ASSESSMENT_POLICY.md)
+- [Course Authoring Standard](COURSE_AUTHORING_STANDARD.md)
+- [EliteLang Language Specification](LANGUAGE_SPEC.md)
+- [Continuous Integration](CI.md)
+
+ทุก Chapter 00–18 มี:
+- `LEARNER_GUIDE.md`
+- `WORKED_EXAMPLES.md`
+- `EXERCISES.md` พร้อม evidence contract
+- `MASTERY_TEST.md`
+- `RUBRIC.md` 100 คะแนน
+
+## Roadmap
 
 ```text
 00 Linux Lab
@@ -23,95 +39,77 @@ Predict → Build → Run → Observe → Inspect → Debug → Modify → Expla
 → 07 Linker & Loader
 → 08 Debugging
 → 09 Compiler Frontend
-→ 10 Compiler IR
-→ 11 Compiler Backend
-→ 12 EliteC
+→ 10 IR + data-flow + SSA construction
+→ 11 x86-64 Backend + linear-scan allocation lab
+→ 12 EliteC integration
 → 13 OS Foundations
-→ 14 EliteOS64
-→ 15 Advanced OS
-→ 16 Reverse Engineering
+→ 14 EliteOS64 kernel
+→ 15 Advanced OS Models & Integration Design
+→ 16 Authorized Reverse Engineering
 → 17 Defensive Security Lab
 → 18 Final Capstone
 ```
 
-## Major artifacts
+## Compiler status
 
-### EliteC compiler
+EliteC supports:
+- functions/recursion
+- signed 64-bit `int` + `bool`
+- locals/assignment
+- arithmetic/comparisons
+- short-circuit logic
+- if/else/while
+- >6 integer arguments
 
-```text
-EliteLang
-→ lexer/parser/type checker
-→ IR/CFG
-→ x86-64 backend
-→ GNU assembly
-→ ELF executable
-```
+Semantic contractอยู่ใน [LANGUAGE_SPEC.md](LANGUAGE_SPEC.md).
 
-Supports functions, recursion, `int/bool`, mutable locals, arithmetic, comparisons, short-circuit logic, `if/else`, `while` and >6 integer arguments.
+Chapter 10 now includes educational SSA construction. Chapter 11 includes a tested linear-scan allocator lab, while the **baseline generated code still intentionally uses spill-everything stack slots**.
 
-### EliteOS64
+## OS status
 
-Freestanding x86-64 educational kernel:
+EliteOS64 implements:
+- Multiboot2 handoff
+- protected→long mode
+- early paging/GDT
+- serial/VGA
+- IDT + common fault diagnostics
+- PIC/PIT/keyboard
+- memory map / physical-frame allocator
+- kernel heap
+- interactive serial/PS2 shell
 
-```text
-Multiboot2
-→ protected mode
-→ page tables
-→ long mode
-→ GDT
-→ serial/VGA
-→ IDT
-→ PIC/PIT/keyboard
-→ physical frame allocator
-→ kernel heap
-→ shell
-```
-
-Chapter 15 extends OS knowledge through deterministic scheduler/COW/VFS/IPC simulators and advanced design topics such as ring3, TSS, syscalls, APIC/SMP and synchronization.
-
-### Binary analysis / defensive security
-
-Authorized/course-owned targets only:
-
-```text
-ELF triage
-→ disassembly
-→ CFG/data-flow
-→ GDB evidence
-→ reconstruction
-→ local sanitizer/fuzz root-cause workflow
-→ patch + regression
-```
-
-## Chapters
-
-- [00 — Linux Systems Laboratory](00-linux-lab/README.md)
-- [01 — Computer Foundations](01-computer-foundations/README.md)
-- [02 — C Machine Model](02-c-machine-model/README.md)
-- [03 — x86-64 Assembly](03-x86-64-assembly/README.md)
-- [04 — ABI & Linux Syscalls](04-abi-syscalls/README.md)
-- [05 — Computer Architecture](05-computer-architecture/README.md)
-- [06 — ELF Internals](06-elf/README.md)
-- [07 — Linker & Loader](07-linker-loader/README.md)
-- [08 — Debugging Engineering](08-debugging/README.md)
-- [09 — Compiler Frontend](09-compiler-frontend/README.md)
-- [10 — Compiler IR](10-compiler-ir/README.md)
-- [11 — Compiler Backend](11-compiler-backend/README.md)
-- [12 — My Compiler: EliteC](12-my-compiler/README.md)
-- [13 — OS Foundations](13-os-foundations/README.md)
-- [14 — My OS: EliteOS64](14-my-os/README.md)
-- [15 — Advanced OS](15-advanced-os/README.md)
-- [16 — Reverse Engineering](16-reverse-engineering/README.md)
-- [17 — Defensive Security Lab](17-security-lab/README.md)
-- [18 — Final Capstone](18-capstone/README.md)
-
-## Verify entire course
+Static check:
 
 ```bash
-./scripts/install-fedora-tools.sh
+make -C 14-my-os clean test
+```
+
+Separate runtime proof:
+
+```bash
+make -C 14-my-os qemu-test
+```
+
+The QEMU gate waits for real PIT IRQ ticks before declaring the shell ready.
+
+## RE / defensive security scope
+
+Only course-owned or explicitly authorized targets. The focus is debugging, compatibility, root-cause analysis, patching, sanitizers, fuzzing and regression testing.
+
+## Automated repository checks
+
+```bash
 ./scripts/check-environment.sh
 ./scripts/verify-chapters.sh
 ```
+
+Expected final wording:
+
+```text
+[OK] Automated repository checks for Chapters 00–18 passed.
+```
+
+That does **not** certify learner mastery, security, production readiness, or universal hardware compatibility.
 
 ## Final capstone
 
@@ -119,10 +117,4 @@ ELF triage
 make -C 18-capstone clean test
 ```
 
-The capstone integrates compiler, ELF/RE tooling, EliteOS64 kernel validation, Advanced-OS simulations and defensive regression tests, then produces a SHA-256 artifact manifest and audit summary.
-
-## Scope / honesty
-
-This repository is an educational systems-engineering course, not a claim that the compiler or kernel is production ready.
-
-Chapter 15 explicitly distinguishes host-side algorithm simulations from kernel-integrated features. Reverse engineering/security work is limited to course-owned or explicitly authorized targets and focuses on debugging, compatibility, root-cause analysis, patching and defensive testing.
+is only the integration baseline. Course completion additionally requires learner-created work in [18-capstone/ASSIGNMENT.md](18-capstone/ASSIGNMENT.md).

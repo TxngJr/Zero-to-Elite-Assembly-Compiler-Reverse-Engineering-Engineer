@@ -17,3 +17,15 @@
 
 **Previous:** [Chapter 00](../00-linux-lab/README.md)  
 **Next:** [Chapter 02 — C Machine Model](../02-c-machine-model/README.md)
+## Self-study quality path
+
+1. [Learner Guide](LEARNER_GUIDE.md)
+2. [Theory](THEORY.md)
+3. [Worked Examples](WORKED_EXAMPLES.md)
+4. [Labs](LABS.md)
+5. [Exercises](EXERCISES.md)
+6. [Mastery Test](MASTERY_TEST.md)
+7. [Rubric](RUBRIC.md)
+8. [Answers / Hints](ANSWERS.md)
+
+> `make test` ตรวจ known regressions; ไม่ใช่หลักฐาน mastery.

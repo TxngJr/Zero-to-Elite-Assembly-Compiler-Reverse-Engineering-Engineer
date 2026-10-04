@@ -1,5 +1,10 @@
 # Exercises
 
+## วิธีทำแบบฝึกหัดชุดนี้
+
+ทุก numbered prompt ต้องตอบ 4 ส่วน: **Explain**, **Concrete example**, **Evidence**, และ **Boundary / misconception**. โจทย์คำนวณ/assembly/CFG ต้องแสดงขั้นตอน; โจทย์ code ต้องมี test/evidence.
+
+
 1. kernel load address
 2. Multiboot magic
 3. header checksum

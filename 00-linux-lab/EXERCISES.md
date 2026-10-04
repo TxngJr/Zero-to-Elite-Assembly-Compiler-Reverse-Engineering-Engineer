@@ -1,5 +1,10 @@
 # Exercises
 
+## วิธีทำแบบฝึกหัดชุดนี้
+
+รายการ numbered prompts ด้านล่าง **ไม่ใช่คำศัพท์ให้ท่อง**. ทุกข้อให้ตอบ 4 ส่วน: **Explain** ด้วยภาษาตัวเอง, **Concrete example** จาก artifact ในบท, **Evidence** เป็น command/code/calculation/output, และ **Boundary / misconception** อย่างน้อยหนึ่งข้อ. โจทย์คำนวณ/assembly/CFG ต้องแสดงขั้นตอน; โจทย์ code ต้องมี test/evidence.
+
+
 1. อธิบาย terminal emulator กับ shell คนละหน้าที่อย่างไร
 2. `program` กับ `process` ต่างกันอย่างไร
 3. จาก `/home/alice/course/00-linux-lab` path `../README.md` resolve ไปที่ใด

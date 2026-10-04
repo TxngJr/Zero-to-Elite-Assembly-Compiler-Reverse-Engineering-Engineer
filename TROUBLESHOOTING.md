@@ -43,3 +43,36 @@ Run:
 
 ## Environment-specific debugging restrictions
 ptrace/core/perf/virtualization can be restricted by containers or policy. Do not disable security controls at random; use an environment where debugging your own code is permitted.
+
+
+## QEMU shows `elite>` but typing used to do nothing
+Current Chapter 14 polls COM1 receive bytes as well as PS/2 scancodes. Use the updated kernel and run:
+
+```bash
+make -C 14-my-os clean qemu
+```
+
+With `-serial stdio -display none`, type `help` then Enter. PIT interrupts wake the halted CPU so serial input is polled.
+
+## Static Chapter 14 test passes but QEMU test fails
+That distinction is intentional. `make test` validates the kernel image; `make qemu-test` validates runtime boot milestones and requires actual PIT IRQ ticks before shell-ready.
+
+Inspect:
+
+```bash
+cat 14-my-os/build/serial.log
+```
+
+Find the first missing `[BOOT]` marker and debug that boundary.
+
+## GRUB rescue command has a different name
+Fedora commonly provides `grub2-mkrescue`; Debian/Ubuntu commonly provides `grub-mkrescue`. The Makefile/QEMU script accepts either.
+
+## Course CI fails quality structure before code tests
+Run:
+
+```bash
+python3 scripts/check-course-quality.py
+```
+
+It checks self-study files, evidence contracts, rubrics, capstone scaffolding and local Markdown links. Fix the reported chapter rather than bypassing the gate.

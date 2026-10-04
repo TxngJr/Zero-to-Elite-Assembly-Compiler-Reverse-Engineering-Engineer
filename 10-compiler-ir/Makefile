@@ -1,7 +1,7 @@
 PYTHON ?= python3
 .PHONY: all test clean
 all:
-	$(PYTHON) -m py_compile projects/elite-ir/elite_ir.py
+	$(PYTHON) -m py_compile projects/elite-ir/elite_ir.py projects/elite-ir/elite_ssa.py
 test:
 	PYTHON=$(PYTHON) ./tests/test.sh
 clean:

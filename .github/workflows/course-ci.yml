@@ -1,0 +1,73 @@
+name: Course CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  full-course:
+    name: Full course / ${{ matrix.cc }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cc: [gcc, clang]
+
+    env:
+      CC: ${{ matrix.cc }}
+      PYTHON: python3
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y             build-essential clang lld binutils gdb make cmake ninja-build             git python3 python3-pip strace ltrace file tree ripgrep nasm
+
+      - name: Environment report
+        run: ./scripts/check-environment.sh
+
+      - name: Automated repository checks 00-18
+        run: ./scripts/verify-chapters.sh
+
+  qemu-runtime:
+    name: EliteOS64 runtime boot / QEMU TCG
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install QEMU and GRUB ISO tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y             build-essential binutils python3 file             qemu-system-x86 grub-pc-bin grub-common xorriso mtools
+
+      - name: Build and boot EliteOS64
+        run: make -C 14-my-os clean qemu-test
+
+  defensive-diagnostics:
+    name: Defensive diagnostics / sanitizers + libFuzzer
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install compiler runtimes
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential clang python3
+
+      - name: Fixed-code regression suite
+        run: make -C 17-security-lab clean test
+
+      - name: Course-injected ASan defects are detected
+        run: make -C 17-security-lab sanitizer-demo
+
+      - name: Coverage-guided parser fuzz smoke
+        run: make -C 17-security-lab fuzz CLANG=clang

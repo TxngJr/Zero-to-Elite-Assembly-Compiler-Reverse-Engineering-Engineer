@@ -1,202 +1,499 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import Optional
-import sys, json
+import json
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "09-compiler-frontend" / "projects" / "elite-frontend"))
+import sys
+from typing import Optional
+
+sys.path.insert(
+    0,
+    str(
+        Path(__file__).resolve().parents[3]
+        / "09-compiler-frontend"
+        / "projects"
+        / "elite-frontend"
+    ),
+)
 import elite_frontend as F
 
-class IRError(Exception): pass
+INT64_MIN = -(1 << 63)
+INT64_MAX = (1 << 63) - 1
+MASK64 = (1 << 64) - 1
+
+class IRError(Exception):
+    pass
+
 @dataclass
-class Instr: op:str; dst:Optional[str]=None; args:list[str]=field(default_factory=list)
+class Instr:
+    op: str
+    dst: Optional[str] = None
+    args: list[str] = field(default_factory=list)
+
 @dataclass
-class Block: label:str; instrs:list[Instr]=field(default_factory=list); term:Optional[Instr]=None
+class Block:
+    label: str
+    instrs: list[Instr] = field(default_factory=list)
+    term: Optional[Instr] = None
+
 @dataclass
-class FunctionIR: name:str; params:list[str]; blocks:list[Block]
+class FunctionIR:
+    name: str
+    params: list[str]
+    blocks: list[Block]
+
 @dataclass
-class ModuleIR: functions:list[FunctionIR]
+class ModuleIR:
+    functions: list[FunctionIR]
+
+def wrap_i64(value: int) -> int:
+    value &= MASK64
+    return value if value <= INT64_MAX else value - (1 << 64)
+
+def trunc_div_i64(a: int, b: int) -> int:
+    if b == 0:
+        raise ZeroDivisionError
+    if a == INT64_MIN and b == -1:
+        raise OverflowError("signed 64-bit division overflow")
+    quotient = abs(a) // abs(b)
+    return -quotient if (a < 0) != (b < 0) else quotient
+
+def trunc_mod_i64(a: int, b: int) -> int:
+    quotient = trunc_div_i64(a, b)
+    return a - quotient * b
 
 class Lowerer:
-    def __init__(self): self.temp=0; self.label=0; self.blocks=[]; self.cur=None
-    def nt(self): self.temp+=1; return f"%t{self.temp}"
-    def nl(self,p="bb"): self.label+=1; return f"{p}{self.label}"
-    def add_block(self,label=None):
-        b=Block(label or self.nl()); self.blocks.append(b); self.cur=b; return b
-    def emit(self,op,dst=None,*args):
-        ins=Instr(op,dst,list(args)); self.cur.instrs.append(ins); return dst
-    def term(self,op,*args): self.cur.term=Instr(op,None,list(args))
-    def lower_module(self,p): return ModuleIR([self.lower_fn(fn) for fn in p.functions])
-    def lower_fn(self,fn):
-        self.temp=0; self.label=0; self.blocks=[]; self.add_block("entry")
-        for s in fn.body.statements:
-            if self.cur.term is None: self.lower_stmt(s)
-        return FunctionIR(fn.name,[p.name for p in fn.params],self.blocks)
-    def lower_stmt(self,s):
-        if isinstance(s,F.Let): self.emit("mov",s.name,self.lower_expr(s.value))
-        elif isinstance(s,F.Assign): self.emit("mov",s.name,self.lower_expr(s.value))
-        elif isinstance(s,F.ExprStmt): self.lower_expr(s.value)
-        elif isinstance(s,F.Return): self.term("ret",self.lower_expr(s.value))
-        elif isinstance(s,F.If):
-            cond=self.lower_expr(s.cond); a=self.nl("then"); b=self.nl("else"); z=self.nl("ifend")
-            self.term("cjump",cond,a,b)
-            self.add_block(a)
-            for x in s.then_block.statements:
-                if self.cur.term is None: self.lower_stmt(x)
-            if self.cur.term is None: self.term("jump",z)
-            self.add_block(b)
-            if s.else_block:
-                for x in s.else_block.statements:
-                    if self.cur.term is None: self.lower_stmt(x)
-            if self.cur.term is None: self.term("jump",z)
-            self.add_block(z)
-        elif isinstance(s,F.While):
-            c=self.nl("while_cond"); body=self.nl("while_body"); end=self.nl("while_end")
-            self.term("jump",c); self.add_block(c); v=self.lower_expr(s.cond); self.term("cjump",v,body,end)
-            self.add_block(body)
-            for x in s.body.statements:
-                if self.cur.term is None: self.lower_stmt(x)
-            if self.cur.term is None: self.term("jump",c)
-            self.add_block(end)
-        else: raise IRError(f"unsupported stmt {type(s)}")
-    def lower_expr(self,e):
-        if isinstance(e,F.IntLit):
-            t=self.nt(); self.emit("const",t,str(e.value)); return t
-        if isinstance(e,F.BoolLit):
-            t=self.nt(); self.emit("const",t,"1" if e.value else "0"); return t
-        if isinstance(e,F.Var): return e.name
-        if isinstance(e,F.Unary):
-            a=self.lower_expr(e.expr); t=self.nt(); self.emit("un",t,e.op,a); return t
-        if isinstance(e,F.Call):
-            args=[self.lower_expr(a) for a in e.args]; t=self.nt(); self.emit("call",t,e.name,*args); return t
-        if isinstance(e,F.Binary) and e.op in ("&&","||"):
-            result=self.nt(); left=self.lower_expr(e.left); rhs=self.nl("logic_rhs"); short=self.nl("logic_short"); done=self.nl("logic_done")
-            self.term("cjump",left,rhs,short) if e.op=="&&" else self.term("cjump",left,short,rhs)
-            self.add_block(rhs); rv=self.lower_expr(e.right); self.emit("mov",result,rv); self.term("jump",done)
-            self.add_block(short); c=self.nt(); self.emit("const",c,"0" if e.op=="&&" else "1"); self.emit("mov",result,c); self.term("jump",done)
-            self.add_block(done); return result
-        if isinstance(e,F.Binary):
-            a=self.lower_expr(e.left); b=self.lower_expr(e.right); t=self.nt()
-            self.emit("cmp" if e.op in ("<","<=",">",">=","==","!=") else "bin",t,e.op,a,b); return t
-        raise IRError(f"unsupported expr {type(e)}")
+    def __init__(self) -> None:
+        self.temp = 0
+        self.label = 0
+        self.blocks: list[Block] = []
+        self.current: Optional[Block] = None
 
-def lower_source(src): return Lowerer().lower_module(F.parse_source(src))
+    def new_temp(self) -> str:
+        self.temp += 1
+        return f"%t{self.temp}"
 
-def format_ir(m):
-    out=[]
-    for fn in m.functions:
+    def new_label(self, prefix: str = "bb") -> str:
+        self.label += 1
+        return f"{prefix}{self.label}"
+
+    def add_block(self, label: Optional[str] = None) -> Block:
+        block = Block(label or self.new_label())
+        self.blocks.append(block)
+        self.current = block
+        return block
+
+    def emit(self, op: str, dst: Optional[str] = None, *args: str) -> Optional[str]:
+        assert self.current is not None
+        self.current.instrs.append(Instr(op, dst, list(args)))
+        return dst
+
+    def terminate(self, op: str, *args: str) -> None:
+        assert self.current is not None
+        self.current.term = Instr(op, None, list(args))
+
+    def lower_module(self, program: F.Program) -> ModuleIR:
+        return ModuleIR([self.lower_function(fn) for fn in program.functions])
+
+    def lower_function(self, fn: F.Function) -> FunctionIR:
+        self.temp = 0
+        self.label = 0
+        self.blocks = []
+        self.add_block("entry")
+
+        for statement in fn.body.statements:
+            assert self.current is not None
+            if self.current.term is None:
+                self.lower_statement(statement)
+
+        return FunctionIR(fn.name, [param.name for param in fn.params], self.blocks)
+
+    def lower_statement(self, statement: F.Stmt) -> None:
+        if isinstance(statement, F.Let):
+            self.emit("mov", statement.name, self.lower_expression(statement.value))
+            return
+
+        if isinstance(statement, F.Assign):
+            self.emit("mov", statement.name, self.lower_expression(statement.value))
+            return
+
+        if isinstance(statement, F.ExprStmt):
+            self.lower_expression(statement.value)
+            return
+
+        if isinstance(statement, F.Return):
+            self.terminate("ret", self.lower_expression(statement.value))
+            return
+
+        if isinstance(statement, F.If):
+            condition = self.lower_expression(statement.cond)
+            then_label = self.new_label("then")
+            else_label = self.new_label("else")
+            end_label = self.new_label("ifend")
+            self.terminate("cjump", condition, then_label, else_label)
+
+            self.add_block(then_label)
+            for nested in statement.then_block.statements:
+                assert self.current is not None
+                if self.current.term is None:
+                    self.lower_statement(nested)
+            assert self.current is not None
+            if self.current.term is None:
+                self.terminate("jump", end_label)
+
+            self.add_block(else_label)
+            if statement.else_block:
+                for nested in statement.else_block.statements:
+                    assert self.current is not None
+                    if self.current.term is None:
+                        self.lower_statement(nested)
+            assert self.current is not None
+            if self.current.term is None:
+                self.terminate("jump", end_label)
+
+            self.add_block(end_label)
+            return
+
+        if isinstance(statement, F.While):
+            cond_label = self.new_label("while_cond")
+            body_label = self.new_label("while_body")
+            end_label = self.new_label("while_end")
+
+            self.terminate("jump", cond_label)
+            self.add_block(cond_label)
+            condition = self.lower_expression(statement.cond)
+            self.terminate("cjump", condition, body_label, end_label)
+
+            self.add_block(body_label)
+            for nested in statement.body.statements:
+                assert self.current is not None
+                if self.current.term is None:
+                    self.lower_statement(nested)
+            assert self.current is not None
+            if self.current.term is None:
+                self.terminate("jump", cond_label)
+
+            self.add_block(end_label)
+            return
+
+        raise IRError(f"unsupported statement {type(statement)}")
+
+    def lower_expression(self, expr: F.Expr) -> str:
+        if isinstance(expr, F.IntLit):
+            temp = self.new_temp()
+            self.emit("const", temp, str(expr.value))
+            return temp
+
+        if isinstance(expr, F.BoolLit):
+            temp = self.new_temp()
+            self.emit("const", temp, "1" if expr.value else "0")
+            return temp
+
+        if isinstance(expr, F.Var):
+            return expr.name
+
+        if isinstance(expr, F.Unary):
+            arg = self.lower_expression(expr.expr)
+            temp = self.new_temp()
+            self.emit("un", temp, expr.op, arg)
+            return temp
+
+        if isinstance(expr, F.Call):
+            args = [self.lower_expression(arg) for arg in expr.args]
+            temp = self.new_temp()
+            self.emit("call", temp, expr.name, *args)
+            return temp
+
+        if isinstance(expr, F.Binary) and expr.op in ("&&", "||"):
+            result = self.new_temp()
+            left = self.lower_expression(expr.left)
+            rhs_label = self.new_label("logic_rhs")
+            short_label = self.new_label("logic_short")
+            done_label = self.new_label("logic_done")
+
+            if expr.op == "&&":
+                self.terminate("cjump", left, rhs_label, short_label)
+            else:
+                self.terminate("cjump", left, short_label, rhs_label)
+
+            self.add_block(rhs_label)
+            right = self.lower_expression(expr.right)
+            self.emit("mov", result, right)
+            self.terminate("jump", done_label)
+
+            self.add_block(short_label)
+            constant = self.new_temp()
+            self.emit("const", constant, "0" if expr.op == "&&" else "1")
+            self.emit("mov", result, constant)
+            self.terminate("jump", done_label)
+
+            self.add_block(done_label)
+            return result
+
+        if isinstance(expr, F.Binary):
+            left = self.lower_expression(expr.left)
+            right = self.lower_expression(expr.right)
+            temp = self.new_temp()
+            op = "cmp" if expr.op in ("<", "<=", ">", ">=", "==", "!=") else "bin"
+            self.emit(op, temp, expr.op, left, right)
+            return temp
+
+        raise IRError(f"unsupported expression {type(expr)}")
+
+def lower_source(src: str) -> ModuleIR:
+    return Lowerer().lower_module(F.parse_source(src))
+
+def format_ir(module: ModuleIR) -> str:
+    out: list[str] = []
+    for fn in module.functions:
         out.append(f"fn {fn.name}({', '.join(fn.params)})")
-        for b in fn.blocks:
-            out.append(f"{b.label}:")
-            for i in b.instrs:
-                lhs=f"{i.dst} = " if i.dst else ""
-                out.append(f"  {lhs}{i.op} {' '.join(i.args)}".rstrip())
-            if b.term: out.append(f"  {b.term.op} {' '.join(b.term.args)}".rstrip())
+        for block in fn.blocks:
+            out.append(f"{block.label}:")
+            for ins in block.instrs:
+                lhs = f"{ins.dst} = " if ins.dst else ""
+                out.append(f"  {lhs}{ins.op} {' '.join(ins.args)}".rstrip())
+            if block.term:
+                out.append(f"  {block.term.op} {' '.join(block.term.args)}".rstrip())
     return "\n".join(out)
 
-def succs(fn):
-    d={b.label:[] for b in fn.blocks}
-    for b in fn.blocks:
-        if not b.term: continue
-        if b.term.op=="jump": d[b.label]=[b.term.args[0]]
-        elif b.term.op=="cjump": d[b.label]=b.term.args[1:3]
-    return d
+def successors(fn: FunctionIR) -> dict[str, list[str]]:
+    result = {block.label: [] for block in fn.blocks}
+    for block in fn.blocks:
+        if not block.term:
+            continue
+        if block.term.op == "jump":
+            result[block.label] = [block.term.args[0]]
+        elif block.term.op == "cjump":
+            result[block.label] = block.term.args[1:3]
+    return result
 
-def predecessors(fn):
-    s=succs(fn); p={b.label:[] for b in fn.blocks}
-    for a,targets in s.items():
-        for z in targets: p[z].append(a)
-    return p
+def predecessors(fn: FunctionIR) -> dict[str, list[str]]:
+    succ = successors(fn)
+    result = {block.label: [] for block in fn.blocks}
+    for source, targets in succ.items():
+        for target in targets:
+            if target not in result:
+                raise IRError(f"unknown block target {target!r} from {source!r}")
+            result[target].append(source)
+    return result
 
-def dominators(fn):
-    labels=[b.label for b in fn.blocks]; preds=predecessors(fn); entry=labels[0]
-    dom={l:set(labels) for l in labels}; dom[entry]={entry}
-    changed=True
+def dominators(fn: FunctionIR) -> dict[str, set[str]]:
+    labels = [block.label for block in fn.blocks]
+    if not labels:
+        return {}
+
+    preds = predecessors(fn)
+    entry = labels[0]
+    dom = {label: set(labels) for label in labels}
+    dom[entry] = {entry}
+
+    changed = True
     while changed:
-        changed=False
-        for l in labels[1:]:
-            ps=preds[l]; new={l}|(set.intersection(*(dom[x] for x in ps)) if ps else set())
-            if new!=dom[l]: dom[l]=new; changed=True
+        changed = False
+        for label in labels[1:]:
+            incoming = preds[label]
+            common = (
+                set.intersection(*(dom[pred] for pred in incoming))
+                if incoming
+                else set()
+            )
+            new = {label} | common
+            if new != dom[label]:
+                dom[label] = new
+                changed = True
     return dom
 
-def uses_defs_block(b):
-    uses=set(); defs=set()
-    for i in b.instrs:
-        vals=i.args[1:] if i.op in ("call","bin","cmp") else i.args[-1:] if i.op in ("mov","un") else []
-        for v in vals:
-            if (v.startswith("%") or v.isidentifier()) and v not in defs: uses.add(v)
-        if i.dst: defs.add(i.dst)
-    if b.term and b.term.op in ("ret","cjump"):
-        v=b.term.args[0]
-        if v not in defs: uses.add(v)
-    return uses,defs
+def uses_defs_block(block: Block) -> tuple[set[str], set[str]]:
+    uses: set[str] = set()
+    defs: set[str] = set()
 
-def liveness(fn):
-    labels=[b.label for b in fn.blocks]; bm={b.label:b for b in fn.blocks}; s=succs(fn)
-    inn={l:set() for l in labels}; out={l:set() for l in labels}
-    changed=True
+    for ins in block.instrs:
+        if ins.op in ("call", "bin", "cmp"):
+            values = ins.args[1:]
+        elif ins.op in ("mov", "un"):
+            values = ins.args[-1:]
+        else:
+            values = []
+
+        for value in values:
+            if (value.startswith("%") or value.isidentifier()) and value not in defs:
+                uses.add(value)
+        if ins.dst:
+            defs.add(ins.dst)
+
+    if block.term and block.term.op in ("ret", "cjump"):
+        value = block.term.args[0]
+        if value not in defs:
+            uses.add(value)
+
+    return uses, defs
+
+def liveness(
+    fn: FunctionIR,
+) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
+    labels = [block.label for block in fn.blocks]
+    block_map = {block.label: block for block in fn.blocks}
+    succ = successors(fn)
+    live_in = {label: set() for label in labels}
+    live_out = {label: set() for label in labels}
+
+    changed = True
     while changed:
-        changed=False
-        for l in reversed(labels):
-            u,d=uses_defs_block(bm[l]); no=set().union(*(inn[x] for x in s[l])) if s[l] else set(); ni=u|(no-d)
-            if no!=out[l] or ni!=inn[l]: out[l]=no; inn[l]=ni; changed=True
-    return inn,out
+        changed = False
+        for label in reversed(labels):
+            uses, defs = uses_defs_block(block_map[label])
+            new_out = (
+                set().union(*(live_in[target] for target in succ[label]))
+                if succ[label]
+                else set()
+            )
+            new_in = uses | (new_out - defs)
+            if new_out != live_out[label] or new_in != live_in[label]:
+                live_out[label] = new_out
+                live_in[label] = new_in
+                changed = True
 
-def optimize_local(fn):
-    for b in fn.blocks:
-        const={}; new=[]
-        for i in b.instrs:
-            if i.op=="const": const[i.dst]=int(i.args[0]); new.append(i); continue
-            if i.op=="mov" and i.args[0] in const:
-                v=const[i.args[0]]; const[i.dst]=v; new.append(Instr("const",i.dst,[str(v)])); continue
-            if i.op=="bin" and i.args[1] in const and i.args[2] in const:
-                a,c=const[i.args[1]],const[i.args[2]]; op=i.args[0]
-                if op=="+": v=a+c
-                elif op=="-": v=a-c
-                elif op=="*": v=a*c
-                elif op=="/" and c!=0: v=int(a/c)
-                elif op=="%" and c!=0: v=a-int(a/c)*c
-                else: new.append(i); const.pop(i.dst,None); continue
-                const[i.dst]=v; new.append(Instr("const",i.dst,[str(v)])); continue
-            if i.dst: const.pop(i.dst,None)
-            new.append(i)
-        b.instrs=new
-    return fn
+    return live_in, live_out
 
-def ssa_phi_candidates(fn):
-    preds=predecessors(fn); bm={b.label:b for b in fn.blocks}; out={}
-    for label,ps in preds.items():
-        if len(ps)<2: continue
-        defs_by=[uses_defs_block(bm[p])[1] for p in ps]
-        names=set().union(*defs_by)
-        cand=sorted(n for n in names if sum(n in d for d in defs_by)>=2 and not n.startswith("%"))
-        if cand: out[label]=cand
-    return out
+def _fold_binary(op: str, a: int, b: int) -> Optional[int]:
+    if op == "+":
+        return wrap_i64(a + b)
+    if op == "-":
+        return wrap_i64(a - b)
+    if op == "*":
+        return wrap_i64(a * b)
 
-def main(argv=None):
-    argv=sys.argv[1:] if argv is None else argv
-    if not argv:
-        print("usage: elite_ir.py [--ir|--dom|--live|--ssa|--opt] FILE",file=sys.stderr); return 2
-    mode="--ir"
-    if argv[0].startswith("--"): mode=argv.pop(0)
-    if len(argv)!=1: return 2
+    if op in ("/", "%"):
+        try:
+            return trunc_div_i64(a, b) if op == "/" else trunc_mod_i64(a, b)
+        except (ZeroDivisionError, OverflowError):
+            # Preserve the runtime trap instead of changing program semantics.
+            return None
+
+    return None
+
+def optimize_local(fn: FunctionIR) -> None:
+    for block in fn.blocks:
+        constants: dict[str, int] = {}
+        new_instrs: list[Instr] = []
+
+        for ins in block.instrs:
+            if ins.op == "const" and ins.dst is not None:
+                constants[ins.dst] = wrap_i64(int(ins.args[0]))
+                new_instrs.append(
+                    Instr("const", ins.dst, [str(constants[ins.dst])])
+                )
+                continue
+
+            if (
+                ins.op == "mov"
+                and ins.dst is not None
+                and ins.args[0] in constants
+            ):
+                value = constants[ins.args[0]]
+                constants[ins.dst] = value
+                new_instrs.append(Instr("const", ins.dst, [str(value)]))
+                continue
+
+            if (
+                ins.op == "bin"
+                and ins.dst is not None
+                and ins.args[1] in constants
+                and ins.args[2] in constants
+            ):
+                left = constants[ins.args[1]]
+                right = constants[ins.args[2]]
+                folded = _fold_binary(ins.args[0], left, right)
+                if folded is not None:
+                    constants[ins.dst] = folded
+                    new_instrs.append(Instr("const", ins.dst, [str(folded)]))
+                    continue
+
+            if ins.dst is not None:
+                constants.pop(ins.dst, None)
+            new_instrs.append(ins)
+
+        block.instrs = new_instrs
+
+def ssa_phi_candidates(fn: FunctionIR) -> dict[str, list[str]]:
+    """Educational phi-placement hint only; this is not full SSA construction."""
+    preds = predecessors(fn)
+    block_map = {block.label: block for block in fn.blocks}
+    result: dict[str, list[str]] = {}
+
+    for label, incoming in preds.items():
+        if len(incoming) < 2:
+            continue
+        defs_by_pred = [uses_defs_block(block_map[pred])[1] for pred in incoming]
+        names = set().union(*defs_by_pred)
+        candidates = sorted(
+            name
+            for name in names
+            if sum(name in defs for defs in defs_by_pred) >= 2
+            and not name.startswith("%")
+        )
+        if candidates:
+            result[label] = candidates
+
+    return result
+
+def main(argv: Optional[list[str]] = None) -> int:
+    args = list(sys.argv[1:] if argv is None else argv)
+    if not args:
+        print(
+            "usage: elite_ir.py [--ir|--dom|--live|--phi-candidates|--ssa|--opt] FILE",
+            file=sys.stderr,
+        )
+        return 2
+
+    mode = "--ir"
+    if args[0].startswith("--"):
+        mode = args.pop(0)
+    if len(args) != 1:
+        return 2
+
     try:
-        m=lower_source(open(argv[0],encoding="utf-8").read())
-        if mode=="--opt":
-            for fn in m.functions: optimize_local(fn)
-            print(format_ir(m)); return 0
-        if mode=="--ir": print(format_ir(m)); return 0
-        for fn in m.functions:
-            print(f"function {fn.name}")
-            if mode=="--dom":
-                for b,d in dominators(fn).items(): print(b,":",",".join(sorted(d)))
-            elif mode=="--live":
-                li,lo=liveness(fn)
-                for b in li: print(b,"in=",sorted(li[b]),"out=",sorted(lo[b]))
-            elif mode=="--ssa": print(json.dumps(ssa_phi_candidates(fn),sort_keys=True))
-            else: raise IRError("unknown mode")
-        return 0
-    except (OSError,F.CompileError,IRError) as e:
-        print(f"error: {e}",file=sys.stderr); return 1
+        module = lower_source(open(args[0], encoding="utf-8").read())
 
-if __name__=="__main__": raise SystemExit(main())
+        if mode == "--opt":
+            for fn in module.functions:
+                optimize_local(fn)
+            print(format_ir(module))
+            return 0
+
+        if mode == "--ir":
+            print(format_ir(module))
+            return 0
+
+        for fn in module.functions:
+            print(f"function {fn.name}")
+            if mode == "--dom":
+                for block, dom in dominators(fn).items():
+                    print(block, ":", ",".join(sorted(dom)))
+            elif mode == "--live":
+                live_in, live_out = liveness(fn)
+                for block in live_in:
+                    print(
+                        block,
+                        "in=",
+                        sorted(live_in[block]),
+                        "out=",
+                        sorted(live_out[block]),
+                    )
+            elif mode == "--phi-candidates":
+                print(json.dumps(ssa_phi_candidates(fn), sort_keys=True))
+            elif mode == "--ssa":
+                import elite_ssa
+                print(elite_ssa.format_ssa(fn))
+            else:
+                raise IRError("unknown mode")
+
+        return 0
+
+    except (OSError, F.CompileError, IRError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+if __name__ == "__main__":
+    raise SystemExit(main())

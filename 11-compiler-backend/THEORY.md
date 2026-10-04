@@ -141,9 +141,19 @@ Node = virtual register/value. Edge = live overlap. Graph coloring assign colors
 
 Linear scanใช้ live intervalsเรียงตาม program positions. เร็วและเหมาะ JIT/simple compilers แต่ code qualityอาจด้อย graph coloring.
 
+Chapterนี้มี `projects/linear-scan/linear_scan.py` ที่ implement algorithmจริง:
+- expire intervals
+- reuse free registers
+- detect register pressure
+- spill interval ตาม end-position heuristic
+
+Testsตรวจ non-overlap reuse, overlap separation และ spill behavior.
+
 ## 21. Spilling
 
-Spillเก็บ valueใน stack. Backendปัจจุบันคือ “spill everything” baseline จึง correctแต่ช้า—จุดเริ่มที่ดีสำหรับ allocator challenge.
+Spillเก็บ valueใน stack. Backendหลักปัจจุบันยังเป็น “spill everything” baseline เพื่อให้ ABI/instruction selectionอ่านง่าย.
+
+**Allocator lab ยังไม่ถูก integrateเข้า codegen**. Integrationจริงต้องเพิ่ม interval constructionจาก IR, fixed-register constraints, call clobbers, callee-saved handling และ spill insertion.
 
 ## 22. Register Classes
 

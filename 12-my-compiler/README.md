@@ -49,3 +49,15 @@ python3 projects/elitec/elitec.py examples/factorial.el -o build/factorial
 ```
 
 EliteC รุ่นนี้ intentionally ใช้ backend แบบ stack-slot/spill-everything จาก Chapter 11 เพื่อให้ correctnessและ ABIเป็นฐานที่ตรวจสอบได้ก่อนเพิ่ม allocator/optimizerขั้นสูง.
+## Self-study quality path
+
+1. [Learner Guide](LEARNER_GUIDE.md)
+2. [Theory](THEORY.md)
+3. [Worked Examples](WORKED_EXAMPLES.md)
+4. [Labs](LABS.md)
+5. [Exercises](EXERCISES.md)
+6. [Mastery Test](MASTERY_TEST.md)
+7. [Rubric](RUBRIC.md)
+8. [Answers / Hints](ANSWERS.md)
+
+> `make test` ตรวจ known regressions; ไม่ใช่หลักฐาน mastery.

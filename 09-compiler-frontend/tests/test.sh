@@ -3,13 +3,16 @@ set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 PY=${PYTHON:-python3}
 TOOL="$ROOT/projects/elite-frontend/elite_frontend.py"
-$PY "$TOOL" --check "$ROOT/examples/valid.el" | grep -q '^OK$'
-$PY "$TOOL" --tokens "$ROOT/examples/valid.el" | grep -q '^FN'
-$PY "$TOOL" --ast "$ROOT/examples/control.el" | grep -q '"functions"'
-set +e
-$PY "$TOOL" --check "$ROOT/examples/type_error.el" >/dev/null 2>&1
-s=$?
-set -e
-test "$s" -ne 0
-$PY -m py_compile "$TOOL"
-echo '[OK] chapter 09 frontend'
+
+$PY "$ROOT/tests/test_frontend.py"
+
+$PY "$TOOL" --check "$ROOT/examples/valid.el" > "$ROOT/check.out"
+grep -q '^OK$' "$ROOT/check.out"
+$PY "$TOOL" --tokens "$ROOT/examples/valid.el" > "$ROOT/tokens.out"
+grep -q '^FN' "$ROOT/tokens.out"
+$PY "$TOOL" --ast "$ROOT/examples/control.el" > "$ROOT/ast.out"
+grep -q '"functions"' "$ROOT/ast.out"
+
+rm -f "$ROOT/check.out" "$ROOT/tokens.out" "$ROOT/ast.out"
+$PY -m py_compile "$TOOL" "$ROOT/tests/test_frontend.py"
+echo '[OK] chapter 09 frontend semantic tests'

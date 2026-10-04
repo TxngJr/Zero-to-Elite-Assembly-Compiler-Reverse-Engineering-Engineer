@@ -11,21 +11,30 @@ print_tool() {
   if command -v "$cmd" >/dev/null 2>&1; then
     local first
     first=$("$cmd" "$flag" 2>&1 | head -n1)
-    printf '[OK] %-16s %s\n' "$label" "$first"
+    printf '[OK] %-20s %s\n' "$label" "$first"
     ok=$((ok+1))
   else
-    printf '[MISSING] %-16s %s\n' "$label" "$cmd"
+    printf '[MISSING] %-20s %s\n' "$label" "$cmd"
     missing=$((missing+1))
   fi
 }
 
 print_optional() {
-  local label=$1 cmd=$2
-  if command -v "$cmd" >/dev/null 2>&1; then
-    printf '[OPTIONAL] %-16s installed\n' "$label"
+  local label=$1
+  shift
+  local found=''
+  for cmd in "$@"; do
+    if command -v "$cmd" >/dev/null 2>&1; then
+      found=$cmd
+      break
+    fi
+  done
+
+  if [[ -n "$found" ]]; then
+    printf '[OPTIONAL] %-20s installed (%s)\n' "$label" "$found"
     optional_ok=$((optional_ok+1))
   else
-    printf '[OPTIONAL] %-16s missing\n' "$label"
+    printf '[OPTIONAL] %-20s missing (%s)\n' "$label" "$*"
     optional_missing=$((optional_missing+1))
   fi
 }
@@ -69,7 +78,7 @@ print_optional perf perf
 print_optional eu-readelf eu-readelf
 print_optional valgrind valgrind
 print_optional qemu qemu-system-x86_64
-print_optional grub2-mkrescue grub2-mkrescue
+print_optional grub-mkrescue grub2-mkrescue grub-mkrescue
 print_optional xorriso xorriso
 
 echo
@@ -78,7 +87,8 @@ echo "Required tools: $ok present, $missing missing"
 echo "Optional tools: $optional_ok present, $optional_missing missing"
 
 if (( missing == 0 )); then
-  echo 'Ready for Chapters 00–18. QEMU/GRUB remain optional for the Chapter 14 boot smoke test.'
+  echo 'Required toolchain is ready for Chapters 00–18.'
+  echo 'QEMU/GRUB are optional for ordinary static checks but required for the runtime OS boot gate.'
   exit 0
 else
   echo 'Install missing required tools before continuing.'

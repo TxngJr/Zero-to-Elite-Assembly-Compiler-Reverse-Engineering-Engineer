@@ -23,3 +23,15 @@
 make clean test
 make sanitize
 ```
+## Self-study quality path
+
+1. [Learner Guide](LEARNER_GUIDE.md)
+2. [Theory](THEORY.md)
+3. [Worked Examples](WORKED_EXAMPLES.md)
+4. [Labs](LABS.md)
+5. [Exercises](EXERCISES.md)
+6. [Mastery Test](MASTERY_TEST.md)
+7. [Rubric](RUBRIC.md)
+8. [Answers / Hints](ANSWERS.md)
+
+> `make test` ตรวจ known regressions; ไม่ใช่หลักฐาน mastery.
