@@ -138,6 +138,8 @@ python3 10-compiler-ir/projects/elite-ir/elite_ir.py \
 
 **Goal:** เห็น phi placement + variable renamingจริง ไม่ใช่แค่ phi-candidate list.
 
+**Prediction:** สำหรับ diamond ที่ `x` ถูก define คนละค่าใน then/else, join block ต้องมี phi ของ `x`; use หลัง join ต้องอ้าง version ที่ phi define ไม่ใช่ source name `x` เดิม.
+
 **Command / action:**
 
 ```bash

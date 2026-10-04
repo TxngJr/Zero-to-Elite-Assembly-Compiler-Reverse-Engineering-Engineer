@@ -47,6 +47,8 @@ elite>
 
 **Goal:** พิสูจน์ว่า `-serial stdio -display none` รับ inputได้ ไม่ใช่แค่ output.
 
+**Prediction:** เมื่อพิมพ์ `ticks` ผ่าน terminal, COM1 receive path ต้องส่งตัวอักษรเข้า shell, shellต้อง execute commandและตอบ `ticks=<number>` กลับมาทาง COM1 โดยไม่พึ่ง PS/2 keyboard.
+
 **Command / action:**
 
 ```bash

@@ -131,6 +131,8 @@ printf 'propagated status=%d\n' "$status"
 
 **Goal:** พิสูจน์ driverเคารพ language specก่อนถึง assembler.
 
+**Prediction:** `main` ที่มี parameter, `main` ที่ return `bool`, และ integer literal ที่เกิน signed 64-bit ต้องถูก reject ใน frontend/check phaseด้วย non-zero status โดยไม่ปล่อยให้ assembler/linkerเป็นคนเจอทีหลัง.
+
 **Command / action:**
 
 ```bash

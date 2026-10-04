@@ -71,6 +71,8 @@ grep -n -E 'call|push|rdi|rsi|rdx|rcx|r8|r9|\[rbp\+' \
 
 **Goal:** ผูก language semanticsกับ x86 `idiv`.
 
+**Prediction:** สำหรับ `-7 / 3` quotient ต้องเป็น `-2` และ remainder `-1`; assembly ต้องเตรียม signed dividend ใน RDX:RAX ด้วย `cqo` ก่อน `idiv`.
+
 **Command / action:**
 
 ```bash
@@ -108,6 +110,8 @@ grep -n -E 'cqo|idiv|rdx|rax' 11-compiler-backend/build/div.s
 ## Example 4 — Linear-scan allocation lab
 
 **Goal:** แยก “allocator algorithm lab” ออกจาก baseline codegenที่ยัง spillทุก value.
+
+**Prediction:** live intervals ที่ไม่ overlap ควร reuse register ได้, intervals ที่ overlap ต้องใช้คนละ registerเมื่อมีพอ, และเมื่อ register pressureเกิน poolอย่างน้อยหนึ่ง intervalต้อง spill.
 
 **Command / action:**
 

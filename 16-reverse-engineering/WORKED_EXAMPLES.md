@@ -124,6 +124,8 @@ objdump -d -Mintel 16-reverse-engineering/build/challenges/control-stripped \
 
 **Goal:** พิสูจน์ RE automation fail closedเมื่อ required ELF toolล้ม.
 
+**Prediction:** ถ้าป้อน plain-text ที่ไม่ใช่ ELF ให้ binary-report, `readelf` ซึ่งเป็น required evidence source ต้อง fail และ binary-report ต้องคืน non-zero status แทนการสร้าง reportที่ดูเหมือนสำเร็จ.
+
 **Command / action:**
 
 ```bash
