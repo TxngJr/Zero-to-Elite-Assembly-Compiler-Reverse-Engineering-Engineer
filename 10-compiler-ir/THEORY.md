@@ -148,11 +148,26 @@ Phiไม่ใช่ runtime function call; เป็น IR merge semanticsท�
 
 ## 20. Phi Placement
 
-Full SSAใช้ dominance frontiers. Course tool `--ssa` แสดง **phi candidatesแบบง่าย** ที่ join blockเมื่อ source variableถูก defineในหลาย predecessor; นี่เป็น teaching aid ไม่ใช่ Cytron algorithmครบ.
+Full SSAต้องวาง phi nodesบน dominance frontier ของ definition sites.
+
+Courseมีสองมุมมอง:
+- `--phi-candidates` — heuristic แบบง่ายเพื่อให้เห็นว่าทำไม join point อาจต้อง phi
+- `--ssa` — educational SSA constructionจริงที่คำนวณ immediate dominators, dominance frontiers และ iterated phi placement
 
 ## 21. Renaming
 
-หลัง phi placement SSA conversionต้อง rename variable definitions/usesตาม dominator tree. จะต่อใน full compiler chapter.
+หลัง phi placement `--ssa` เดิน dominator tree, เก็บ version stack ต่อ source variable และ rename definitions/uses เช่น:
+
+```text
+x.0 = ...
+then: x.1 = ...
+else: x.2 = ...
+join: x.3 = phi [then: x.1] [else: x.2]
+```
+
+IR temporaries `%tN` เดิม uniqueอยู่แล้วจึงไม่ต้อง versionซ้ำ.
+
+SSA implementationนี้เป็น educational construction และยังไม่ได้ feedเข้าสู่ baseline Chapter 11 codegen; backendยัง consume non-SSA IR.
 
 ## 22. Loops and Phi
 

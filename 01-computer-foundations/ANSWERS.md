@@ -7,3 +7,6 @@
 - little-endian `0xDEADBEEF` → `EF BE AD DE`
 
 Methods: binary→hex จับกลุ่ม 4 bits; signed two's complement ใช้ `unsigned-2^n` เมื่อ high bit=1; field mask สร้าง width bits แล้ว shift; little-endian reconstruction ให้ byte ต่ำสุดคูณ `256^0`.
+## วิธีใช้ Answers/Hints
+
+ไฟล์นี้เป็น selected hints. Worked solutions อยู่ใน [WORKED_EXAMPLES.md](WORKED_EXAMPLES.md). ทุก exercise ต้องมี explanation + example + evidence + misconception และให้คะแนนด้วย [RUBRIC.md](RUBRIC.md).

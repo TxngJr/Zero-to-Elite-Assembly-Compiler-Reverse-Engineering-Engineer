@@ -20,3 +20,6 @@
 18. อธิบาย Chapter14 boot planโดยไม่เปิด notes
 
 Pass ≥85% + `make test`.
+## Scoring — 100 points
+
+ใช้ [RUBRIC.md](RUBRIC.md): Concepts 20, Prediction 10, Lab evidence 20, Implementation 25, Inspection/debugging 15, Explanation/limitations 10. **Pass:** ≥85, Implementation ≥18/25, Lab evidence ≥14/20. `make test` เป็น automated prerequisite เท่านั้น.

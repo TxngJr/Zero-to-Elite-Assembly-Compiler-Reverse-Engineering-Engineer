@@ -1,5 +1,10 @@
 # Exercises
 
+## วิธีทำแบบฝึกหัดชุดนี้
+
+ทุก numbered prompt ต้องตอบ 4 ส่วน: **Explain**, **Concrete example**, **Evidence**, และ **Boundary / misconception**. โจทย์คำนวณ/assembly/CFG ต้องแสดงขั้นตอน; โจทย์ code ต้องมี test/evidence.
+
+
 1. symbol definition/reference
 2. Uใน nm
 3. strong vs weak

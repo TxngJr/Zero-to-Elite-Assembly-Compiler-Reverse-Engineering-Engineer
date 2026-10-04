@@ -53,7 +53,34 @@ static void run_command(void) {
     prompt();
 }
 
-static char translate(uint8_t scancode) {
+void shell_init(void) {
+    length = 0;
+    console_write("commands: help ticks mem alloc clear\n");
+    prompt();
+}
+
+void shell_feed_char(char c) {
+    if (c == '\r' || c == '\n') {
+        console_putc('\n');
+        run_command();
+        return;
+    }
+
+    if (c == '\b' || c == 0x7F) {
+        if (length != 0) {
+            --length;
+            console_putc('\b');
+        }
+        return;
+    }
+
+    if (c >= 32 && c <= 126 && length + 1 < sizeof line) {
+        line[length++] = c;
+        console_putc(c);
+    }
+}
+
+static char translate_scancode(uint8_t scancode) {
     static const char map[58] = {
         0, 0, '1', '2', '3', '4', '5', '6',
         '7', '8', '9', '0', '-', '=', 0, 0,
@@ -68,34 +95,23 @@ static char translate(uint8_t scancode) {
     return scancode < 58 ? map[scancode] : 0;
 }
 
-void shell_init(void) {
-    length = 0;
-    console_write("commands: help ticks mem alloc clear\n");
-    prompt();
-}
-
 void shell_feed_scancode(uint8_t scancode) {
     if ((scancode & 0x80u) != 0u) {
         return;
     }
 
     if (scancode == 0x1C) {
-        console_putc('\n');
-        run_command();
+        shell_feed_char('\n');
         return;
     }
 
     if (scancode == 0x0E) {
-        if (length != 0) {
-            --length;
-            console_putc('\b');
-        }
+        shell_feed_char('\b');
         return;
     }
 
-    const char c = translate(scancode);
-    if (c != 0 && length + 1 < sizeof line) {
-        line[length++] = c;
-        console_putc(c);
+    const char c = translate_scancode(scancode);
+    if (c != 0) {
+        shell_feed_char(c);
     }
 }

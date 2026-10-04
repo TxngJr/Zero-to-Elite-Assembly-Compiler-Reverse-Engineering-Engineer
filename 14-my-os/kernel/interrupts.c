@@ -1,4 +1,5 @@
 #include "interrupts.h"
+#include "console.h"
 #include "ports.h"
 
 #include <stdint.h>
@@ -21,6 +22,10 @@ typedef struct __attribute__((packed)) {
 static IdtGate idt[256];
 
 extern void isr_default(void);
+extern void exception_de_stub(void);
+extern void exception_ud_stub(void);
+extern void exception_gp_stub(void);
+extern void exception_pf_stub(void);
 extern void irq0_stub(void);
 extern void irq1_stub(void);
 
@@ -58,6 +63,13 @@ void interrupts_init(void) {
     for (unsigned i = 0; i < 256; ++i) {
         set_gate(i, isr_default);
     }
+
+    /* Common faults get diagnostic stubs instead of a silent halt. */
+    set_gate(0, exception_de_stub);
+    set_gate(6, exception_ud_stub);
+    set_gate(13, exception_gp_stub);
+    set_gate(14, exception_pf_stub);
+
     set_gate(32, irq0_stub);
     set_gate(33, irq1_stub);
 
@@ -68,6 +80,8 @@ void interrupts_init(void) {
     __asm__ volatile("lidt %0" : : "m"(pointer));
 
     pic_remap();
+
+    /* Enable only PIT timer (IRQ0) and PS/2 keyboard (IRQ1). */
     outb(0x21, 0xFC);
     outb(0xA1, 0xFF);
 }
@@ -88,4 +102,28 @@ void pit_init(uint32_t hz) {
     outb(0x43, 0x36);
     outb(0x40, (uint8_t)divisor);
     outb(0x40, (uint8_t)(divisor >> 8));
+}
+
+__attribute__((noreturn))
+void exception_panic(uint64_t vector, uint64_t error_code, uint64_t rip) {
+    console_write("\n[EXCEPTION] vector=");
+    console_write_dec(vector);
+    console_write(" error=");
+    console_write_hex(error_code);
+    console_write(" rip=");
+    console_write_hex(rip);
+
+    if (vector == 14) {
+        uint64_t cr2;
+        __asm__ volatile("mov %%cr2, %0" : "=r"(cr2));
+        console_write(" cr2=");
+        console_write_hex(cr2);
+    }
+
+    console_putc('\n');
+    console_write("[EXCEPTION] kernel halted\n");
+
+    for (;;) {
+        __asm__ volatile("cli; hlt");
+    }
 }

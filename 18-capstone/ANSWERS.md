@@ -9,3 +9,6 @@
 - Reverse engineering recovers evidence-backed behavior, not necessarily original source.
 - Sanitizers/fuzzers increase evidence and test coverage but do not prove security.
 - Capstone hashes identify exact generated artifacts; they do not establish trust by themselves.
+## วิธีใช้ Answers/Hints
+
+ไฟล์นี้เป็น selected hints ไม่ใช่ capstone solution. Worked examples อยู่ใน [WORKED_EXAMPLES.md](WORKED_EXAMPLES.md); งานที่ต้องสร้างเองอยู่ใน [ASSIGNMENT.md](ASSIGNMENT.md). ให้คะแนนด้วย [RUBRIC.md](RUBRIC.md).

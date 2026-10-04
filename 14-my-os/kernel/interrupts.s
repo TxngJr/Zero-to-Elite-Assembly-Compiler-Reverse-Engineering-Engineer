@@ -13,6 +13,8 @@ last_scancode:
 .section .text
 .code64
 
+.extern exception_panic
+
 .global isr_default
 .type isr_default, @function
 isr_default:
@@ -21,6 +23,49 @@ isr_default:
     hlt
     jmp 1b
 .size isr_default, .-isr_default
+
+/*
+ * Normalized exception frame passed to exception_common:
+ *   [rsp + 0]  vector
+ *   [rsp + 8]  error code (synthetic zero for exceptions without one)
+ *   [rsp + 16] RIP pushed by hardware
+ *
+ * The panic handler never returns, so exception_common may realign RSP
+ * destructively before entering C.
+ */
+.macro EXC_NOERR name, vector
+.global \name
+.type \name, @function
+\name:
+    push 0
+    push \vector
+    jmp exception_common
+.size \name, .-\name
+.endm
+
+.macro EXC_ERR name, vector
+.global \name
+.type \name, @function
+\name:
+    push \vector
+    jmp exception_common
+.size \name, .-\name
+.endm
+
+EXC_NOERR exception_de_stub, 0
+EXC_NOERR exception_ud_stub, 6
+EXC_ERR   exception_gp_stub, 13
+EXC_ERR   exception_pf_stub, 14
+
+.type exception_common, @function
+exception_common:
+    mov rdi, QWORD PTR [rsp]
+    mov rsi, QWORD PTR [rsp + 8]
+    mov rdx, QWORD PTR [rsp + 16]
+    and rsp, -16
+    call exception_panic
+    ud2
+.size exception_common, .-exception_common
 
 .global irq0_stub
 .type irq0_stub, @function

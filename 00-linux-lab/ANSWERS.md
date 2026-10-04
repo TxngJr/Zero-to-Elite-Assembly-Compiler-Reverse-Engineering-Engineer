@@ -11,3 +11,6 @@
 Challenge 00-B: redirect streams, เก็บ exit code ก่อน command อื่นจะทับ `$?`, แล้ว `exit "$status"`.
 
 Reference: `.i` = preprocessed source, `.s` = assembly text, `.o` = relocatable object, final executable = linked image.
+## วิธีใช้ Answers/Hints
+
+ไฟล์นี้เป็น selected hints. Worked solutions อยู่ใน [WORKED_EXAMPLES.md](WORKED_EXAMPLES.md). ทุก exercise ต้องมี explanation + example + evidence + misconception และให้คะแนนด้วย [RUBRIC.md](RUBRIC.md).

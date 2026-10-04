@@ -87,3 +87,16 @@ Artifacts are written to:
 Automated tests are necessary but not enough.
 
 To finish the course, you should also be able to explain—without reading commands from the repository—how source becomes machine execution, how an OS establishes its execution environment, how to inspect an unknown authorized ELF binary, and how to investigate/fix a local memory-safety defect with evidence.
+## Self-study quality path
+
+1. [Learner Guide](LEARNER_GUIDE.md)
+2. [Theory](THEORY.md)
+3. [Worked Examples](WORKED_EXAMPLES.md)
+4. [Capstone Assignment](ASSIGNMENT.md) — ต้องสร้าง/แก้ของเอง
+5. [Labs](LABS.md)
+6. [Exercises](EXERCISES.md)
+7. [Mastery Test](MASTERY_TEST.md)
+8. [Rubric](RUBRIC.md)
+9. [Answers / Hints](ANSWERS.md)
+
+> `make test` เป็น CI/integration audit ไม่ใช่ capstone submission. ต้องมี code patch + evidence + report + oral/written defense.

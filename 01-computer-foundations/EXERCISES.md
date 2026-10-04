@@ -1,5 +1,10 @@
 # Exercises
 
+## วิธีทำแบบฝึกหัดชุดนี้
+
+รายการ numbered prompts ด้านล่าง **ไม่ใช่คำศัพท์ให้ท่อง**. ทุกข้อให้ตอบ 4 ส่วน: **Explain** ด้วยภาษาตัวเอง, **Concrete example** จาก artifact ในบท, **Evidence** เป็น command/code/calculation/output, และ **Boundary / misconception** อย่างน้อยหนึ่งข้อ. โจทย์คำนวณ/assembly/CFG ต้องแสดงขั้นตอน; โจทย์ code ต้องมี test/evidence.
+
+
 ## A. Decimal/Binary — 20
 แปลง: 0,1,2,3,5,7,8,10,13,15,16,31,32,42,63,64,65,100,127,255
 

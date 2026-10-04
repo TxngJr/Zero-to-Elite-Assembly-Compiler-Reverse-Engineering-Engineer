@@ -1,39 +1,42 @@
 # Course Map
 
-| Chapter | Topic | Status |
+| Chapter | Topic | Repository status |
 |---|---|---|
-| 00 | Linux Systems Laboratory | ✅ Implemented |
-| 01 | Computer Foundations | ✅ Implemented |
-| 02 | C Machine Model | ✅ Implemented |
-| 03 | x86-64 Assembly | ✅ Implemented |
-| 04 | ABI & Linux Syscalls | ✅ Implemented |
-| 05 | Computer Architecture | ✅ Implemented |
-| 06 | ELF Internals | ✅ Implemented |
-| 07 | Linker & Loader | ✅ Implemented |
-| 08 | Debugging Engineering | ✅ Implemented |
-| 09 | Compiler Frontend | ✅ Implemented |
-| 10 | Intermediate Representation | ✅ Implemented |
-| 11 | Compiler Backend | ✅ Implemented |
-| 12 | My Compiler / EliteC | ✅ Implemented |
-| 13 | OS Foundations | ✅ Implemented |
-| 14 | My OS / EliteOS64 | ✅ Implemented |
-| 15 | Advanced OS | ✅ Implemented |
-| 16 | Reverse Engineering | ✅ Implemented |
-| 17 | Defensive Security Lab | ✅ Implemented |
-| 18 | Final Capstone | ✅ Implemented |
+| 00 | Linux Systems Laboratory | Educational implementation + mastery rubric |
+| 01 | Computer Foundations | Educational implementation + mastery rubric |
+| 02 | C Machine Model | Educational implementation + mastery rubric |
+| 03 | x86-64 Assembly | Educational implementation + mastery rubric |
+| 04 | ABI & Linux Syscalls | Educational implementation + mastery rubric |
+| 05 | Computer Architecture | Educational implementation + mastery rubric |
+| 06 | ELF Internals | Educational implementation + mastery rubric |
+| 07 | Linker & Loader | Educational implementation + mastery rubric |
+| 08 | Debugging Engineering | Educational implementation + mastery rubric |
+| 09 | Compiler Frontend | Tested educational implementation |
+| 10 | IR / data-flow / SSA construction | Tested educational implementation |
+| 11 | x86-64 backend + allocator lab | Baseline backend + separate linear-scan lab |
+| 12 | EliteC Integration | Tested educational compiler |
+| 13 | OS Foundations | Models / exercises |
+| 14 | EliteOS64 | Kernel implementation + separate QEMU runtime gate |
+| 15 | Advanced OS Models | Host-side models; not kernel-integrated |
+| 16 | Reverse Engineering | Authorized course tooling/challenges |
+| 17 | Defensive Security | Course-owned defensive labs |
+| 18 | Capstone | Automated baseline + learner-created assignment |
 
-## Dependency chain
+## Important boundaries
 
-```text
-00 Linux → 01 Foundations → 02 C
-→ 03 Assembly → 04 ABI/Syscalls → 05 Architecture
-→ 06 ELF → 07 Linker/Loader → 08 Debugging
-→ 09 Frontend → 10 IR → 11 Backend → 12 EliteC
-→ 13 OS Foundations → 14 EliteOS64 → 15 Advanced OS
-→ 16 Reverse Engineering → 17 Defensive Security
-→ 18 Final Capstone
-```
+- “Automated checks pass” ≠ learner mastery.
+- Chapter 15 models ≠ EliteOS64 process/VFS/syscall implementation.
+- Linear-scan lab ≠ allocator integrated into generated EliteC code.
+- Sanitizer/fuzzer clean runs ≠ security proof.
+- QEMU boot ≠ universal hardware compatibility.
 
-## Completion
+## Long-term extension tracks
 
-The implementation roadmap is complete at Chapter 18. Further work belongs to extension tracks such as full SSA/register allocation, user-mode EliteOS integration, VFS/filesystems, APIC/SMP, richer RE tooling and extended defensive fuzzing.
+The course intentionally exposes next steps rather than claiming production completeness:
+- integrate SSA-based optimization into backend
+- integrate register allocation into codegen
+- richer language types/runtime/object emission/DWARF
+- ring3 + VMM + scheduler + syscalls + VFS in EliteOS64
+- APIC/SMP
+- deeper RE/decompiler workflows
+- longer coverage-guided fuzz campaigns

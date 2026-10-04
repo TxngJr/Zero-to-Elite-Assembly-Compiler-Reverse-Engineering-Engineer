@@ -27,3 +27,15 @@ make inspect
 โปรเจกต์หลักคือ `projects/elf-inspector/` ซึ่งอ่าน ELF64 แบบ defensive: validate magic/class/data encoding และตรวจ file bounds ก่อนเดินตาราง headers
 
 > `elf-inspector` รองรับ ELF64 little-endian แบบ header counts ปกติบน target course เท่านั้น; ELF32, big-endian และ extended section/program-header numbering เป็นหัวข้อขยายและจะถูก rejectแทนการเดา format.
+## Self-study quality path
+
+1. [Learner Guide](LEARNER_GUIDE.md)
+2. [Theory](THEORY.md)
+3. [Worked Examples](WORKED_EXAMPLES.md)
+4. [Labs](LABS.md)
+5. [Exercises](EXERCISES.md)
+6. [Mastery Test](MASTERY_TEST.md)
+7. [Rubric](RUBRIC.md)
+8. [Answers / Hints](ANSWERS.md)
+
+> `make test` ตรวจ known regressions; ไม่ใช่หลักฐาน mastery.

@@ -1,0 +1,1 @@
+Record SHA-256 hashes of analyzed/generated artifacts here.

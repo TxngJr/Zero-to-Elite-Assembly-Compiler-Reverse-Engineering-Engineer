@@ -6,3 +6,6 @@
 - coherenceเน้น locationเดียว; consistencyกำหนด ordering modelกว้างกว่า
 - Amdahl P=0.8,S=4 → `1 / (0.2 + 0.8/4) = 2.5×`
 - branch predictor projectเป็น educational model ไม่ใช่คำอธิบาย predictorจริงของ CPUรุ่นใดรุ่นหนึ่ง
+## วิธีใช้ Answers/Hints
+
+ไฟล์นี้เป็น selected hints. Worked solutions อยู่ใน [WORKED_EXAMPLES.md](WORKED_EXAMPLES.md). ทุก exercise ต้องมี explanation + example + evidence + misconception และให้คะแนนด้วย [RUBRIC.md](RUBRIC.md).

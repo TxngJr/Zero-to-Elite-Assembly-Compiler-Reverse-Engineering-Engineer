@@ -29,18 +29,35 @@ static void serial_putc(char c) {
     outb(0x3F8, (uint8_t)c);
 }
 
+int console_try_read(char *out) {
+    if (out == 0) {
+        return 0;
+    }
+
+    /* COM1 line-status bit 0: data ready. */
+    if ((inb(0x3FD) & 0x01u) == 0u) {
+        return 0;
+    }
+
+    *out = (char)inb(0x3F8);
+    return 1;
+}
+
 static void scroll(void) {
     if (row < 25) {
         return;
     }
+
     for (size_t r = 1; r < 25; ++r) {
         for (size_t c = 0; c < 80; ++c) {
             VGA[(r - 1) * 80 + c] = VGA[r * 80 + c];
         }
     }
+
     for (size_t c = 0; c < 80; ++c) {
         VGA[24 * 80 + c] = cell(' ');
     }
+
     row = 24;
 }
 
@@ -67,6 +84,11 @@ void console_putc(char c) {
         return;
     }
 
+    if (c == '\r') {
+        column = 0;
+        return;
+    }
+
     if (c == '\b') {
         if (column != 0) {
             --column;
@@ -77,6 +99,7 @@ void console_putc(char c) {
 
     VGA[row * 80 + column] = cell(c);
     ++column;
+
     if (column >= 80) {
         column = 0;
         ++row;
@@ -92,6 +115,7 @@ void console_write(const char *s) {
 
 void console_write_hex(uint64_t value) {
     static const char digits[] = "0123456789abcdef";
+
     console_write("0x");
     for (int i = 15; i >= 0; --i) {
         console_putc(digits[(value >> ((unsigned)i * 4u)) & 0xFu]);

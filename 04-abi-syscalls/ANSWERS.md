@@ -7,3 +7,6 @@
 - raw failure = negative errno; libcมักแปลงเป็น -1 + `errno`
 - `_start`: `[rsp]=argc`, `[rsp+8]=argv[0]`, `[rsp+16]=argv[1]` ก่อนปรับ stack
 - partial write: advance pointerและลด remainingจน 0
+## วิธีใช้ Answers/Hints
+
+ไฟล์นี้เป็น selected hints. Worked solutions อยู่ใน [WORKED_EXAMPLES.md](WORKED_EXAMPLES.md). ทุก exercise ต้องมี explanation + example + evidence + misconception และให้คะแนนด้วย [RUBRIC.md](RUBRIC.md).
